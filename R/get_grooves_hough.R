@@ -29,17 +29,18 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #'
 #'
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
+#' @param adjust positive number to adjust the grooves inward
 #' @param return_plot return plot of grooves
 #'
 #' @importFrom x3ptools df_to_x3p
-#' @importFrom imager as.cimg
+#' @importFrom imager as.cimg width height
 #' @importFrom imager imgradient
 #' @importFrom imager hough_line
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
 #' @export
 
-get_grooves_hough <- function(land, return_plot=F){
+get_grooves_hough <- function(land, adjust=10, return_plot=F){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -49,7 +50,10 @@ get_grooves_hough <- function(land, return_plot=F){
   # please assume that we have lands that are wider than high.
   # If they are not, spit out a warning rather than different code.
   # It has bitten us badly into rear elements before to try to think for the user.
-  if(width(land.x3p$surface.matrix) < height(land.x3p$surface.matrix)){
+  sizes <- dim(land.x3p$surface.matrix)
+  width <- sizes[1]
+  height <- sizes[2]
+  if(width < height){
     # cimg <- as.cimg(t(land.x3p$surface.matrix))
     warning("This scan seems to not be rotated correctly. Proceed with caution. ")
   }
@@ -98,7 +102,7 @@ get_grooves_hough <- function(land, return_plot=F){
   closelthird <- good_vertical_segs[which.min(abs(good_vertical_segs - lthird))]
   closeuthird <- good_vertical_segs[which.min(abs(good_vertical_segs - uthird))]
 
-  groove <- c(closelthird, closeuthird)
+  groove <- c(closelthird, closeuthird)*x3p_get_scale(land.x3p) + adjust*c(-1,1)
 
   # summarize the land before visualizing
   land.summary <- summarize(group_by(land, x), value = median(value, na.rm=TRUE))
@@ -107,7 +111,7 @@ get_grooves_hough <- function(land, return_plot=F){
     return(
       list(
         groove,
-        plot = grooves_plot(land = land, grooves = groove)
+        plot = grooves_plot(land = land.summary, grooves = groove)
       )
     )
   }

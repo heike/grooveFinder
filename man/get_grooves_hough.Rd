@@ -6,10 +6,12 @@
 Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
 Pi/4.}
 \usage{
-get_grooves_hough(land, return_plot = F)
+get_grooves_hough(land, adjust = 10, return_plot = F)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
+
+\item{adjust}{positive number to adjust the grooves inward}
 
 \item{return_plot}{return plot of grooves}
 }
