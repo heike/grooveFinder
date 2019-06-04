@@ -175,5 +175,3 @@ profilesplus %>%
     ## Warning: Removed 3006 rows containing missing values (geom_vline).
 
 ![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
-
-XXX check the intercept for hough
