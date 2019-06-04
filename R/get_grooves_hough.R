@@ -2,12 +2,11 @@
 
 #' Re-parameterize the Hough transform output for pixel identification
 #'
+#' Helper function. Should not be used outside the package.
 #' @param rho Numeric vector containing the shortest distance from the line to the origin
 #' @param theta Numeric vector containing the angle of the line from the positive x axis
 #' @param df Data frame containing output from a Hough transformation
-#' @export
-
-
+#' @return HH: Charlotte, could include some more description about the resulting ouput?
 rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
   if (is.null(df)) {
     df <- data.frame(rho = rho, theta = theta)
@@ -24,13 +23,13 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 
 
 #' Use Hough transformation to identify groove locations.
+#'
 #' Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
 #' Pi/4.
-#'
-#'
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param adjust positive number to adjust the grooves inward
 #' @param return_plot return plot of grooves
+#' @return list object consisting of a vector of groove values (left and right) and, if return_plot is TRUE, a plot of the profile with the groove locations
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -40,7 +39,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom assertthat has_name
 #' @export
 
-get_grooves_hough <- function(land, adjust=10, return_plot=F){
+get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -102,8 +101,8 @@ get_grooves_hough <- function(land, adjust=10, return_plot=F){
   closelthird <- good_vertical_segs[which.min(abs(good_vertical_segs - lthird))]
   closeuthird <- good_vertical_segs[which.min(abs(good_vertical_segs - uthird))]
 
-  groove <- c(closelthird, closeuthird)*x3p_get_scale(land.x3p)
-  groove <- groove + adjust*c(1,-1) # adjust locations inward from steep drop-off
+  groove <- c(closelthird, closeuthird) + adjust*c(1,-1) # adjust locations inward from steep drop-off
+  groove <- groove *x3p_get_scale(land.x3p) # change from image width to locations in microns
 
   # summarize the land before visualizing
   land.summary <- summarize(group_by(land, x), value = median(value, na.rm=TRUE))

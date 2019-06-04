@@ -2,11 +2,9 @@
 % Please edit documentation in R/get_grooves_hough.R
 \name{get_grooves_hough}
 \alias{get_grooves_hough}
-\title{Use Hough transformation to identify groove locations.
-Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
-Pi/4.}
+\title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, adjust = 10, return_plot = F)
+get_grooves_hough(land, value, adjust = 10, return_plot = F)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
@@ -15,8 +13,10 @@ get_grooves_hough(land, adjust = 10, return_plot = F)
 
 \item{return_plot}{return plot of grooves}
 }
+\value{
+list object consisting of a vector of groove values (left and right) and, if return_plot is TRUE, a plot of the profile with the groove locations
+}
 \description{
-Use Hough transformation to identify groove locations.
 Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
 Pi/4.
 }

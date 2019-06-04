@@ -19,12 +19,7 @@ status](https://codecov.io/gh/heike/grooveFinder/branch/master/graph/badge.svg)]
 
 # grooveFinder <img src="man/figures/grooveFinder.png" align="right" width = "120"/>
 
-Identify groove locations
-
-## Comparing lands from two bullets
-
-Striae comparisons between bullets are based on land-to-land
-comparisons.
+## Identify groove locations
 
 1.  Load libraries for setting things up
 
@@ -54,24 +49,24 @@ These commands will read in the bullets directly from the NRBTD
 repository, without downloading the files into your working directory:
 
 ``` r
-b1 <- read_bullet(urllist = hamby252demo[[1]])
-b2 <- read_bullet(urllist = hamby252demo[[2]])
+b1 <- read_bullet(urllist = hamby44demo$bullet1)
+b2 <- read_bullet(urllist = hamby44demo$bullet2)
 ```
 
 ``` r
 if (!dir.exists("README_files/data")) {
   dir.create("README_files/data")
 }
-if (!file.exists("README_files/data/Bullet1/Hamby252_Barrel1_Bullet1_Land1.x3p")) {
-  NRBTDsample_download("README_files/data")
+if (!file.exists("README_files/data/bullet1/HS44_Barrel1_Bullet1_Land1.x3p")) {
+ # NRBTDsample_download("README_files/data")
 }
-b1 <- read_bullet("README_files/data/Bullet1")
+b1 <- read_bullet("README_files/data/bullet1")
 ```
 
     ## 6 files found. Reading ...
 
 ``` r
-b2 <- read_bullet("README_files/data/Bullet2")
+b2 <- read_bullet("README_files/data/bullet2")
 ```
 
     ## 6 files found. Reading ...
@@ -86,17 +81,16 @@ b2$land <- 1:6
 bullets <- rbind(b1, b2)
 ```
 
-Change measurements to microns and rotate scans:
+Change measurements to microns and flip scans along y axis:
 
 ``` r
 bullets <- bullets %>% mutate(
   x3p = x3p %>% purrr::map(.f = x3p_m_to_mum)
 )
 
-# turn the scans such that (0,0) is bottom left
+# turn the scans such that (0,0) is at the bottom left
 bullets <- bullets %>% mutate(
   x3p = x3p %>% purrr::map(.f = function(x) x %>% 
-                             rotate_x3p(angle = -90) %>%
                              y_flip_x3p())
 ) 
 ```
@@ -159,8 +153,9 @@ bullets <- bullets %>% mutate(
 )
 ```
 
-Visualize the grooves to see the differences in
-identifications:
+Visualize the grooves to see the differences in identifications between
+the different
+methods:
 
 ``` r
 profilesplus <- bullets %>% tidyr::gather(type_side, location, hough_left:rollapply_right) %>%
@@ -173,8 +168,11 @@ profilesplus %>%
   geom_line() +
   geom_vline(aes(xintercept=location, colour=type), size=0.75) +
   theme_bw() +
-  scale_colour_brewer(palette="Dark2")
+  scale_colour_brewer(palette="Dark2") +
+  theme(legend.position = "bottom")
 ```
+
+    ## Warning: Removed 3006 rows containing missing values (geom_vline).
 
 ![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
