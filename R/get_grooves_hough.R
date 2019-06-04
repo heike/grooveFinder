@@ -86,14 +86,14 @@ get_grooves_hough <- function(land, adjust=10, return_plot=F){
   # Find only the good vertical segments
   segments <- rho_to_ab(df = hough.df)
 
-  # Calculate the intercept of where each Hough line
+  # Calculate the intercept of each Hough line
 
   segments <- segments %>%
-    mutate(pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
-           xaverage = ifelse(theta==0, xintercept, ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2))
+    mutate(
+      pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
+      xaverage = ifelse(theta==0, xintercept, ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2))
 
-  good_vertical_segs <- segments %>%
-    extract2("xaverage")
+  good_vertical_segs <- segments$xaverage
 
   lthird <- width(strong)/6
   uthird <- 5*width(strong)/6
@@ -102,7 +102,8 @@ get_grooves_hough <- function(land, adjust=10, return_plot=F){
   closelthird <- good_vertical_segs[which.min(abs(good_vertical_segs - lthird))]
   closeuthird <- good_vertical_segs[which.min(abs(good_vertical_segs - uthird))]
 
-  groove <- c(closelthird, closeuthird)*x3p_get_scale(land.x3p) + adjust*c(-1,1)
+  groove <- c(closelthird, closeuthird)*x3p_get_scale(land.x3p)
+  groove <- groove + adjust*c(1,-1) # adjust locations inward from steep drop-off
 
   # summarize the land before visualizing
   land.summary <- summarize(group_by(land, x), value = median(value, na.rm=TRUE))

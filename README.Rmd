@@ -122,12 +122,35 @@ bullets <- bullets %>% mutate(
     purrr::map(.f = cc_locate_grooves, method = "hough", 
                adjust = 30, return_plot = FALSE)
 )
+
+bullets <- bullets %>% mutate(
+  hough_left = grooves_hough %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  middle_left = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  rollapply_left = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  hough_right = grooves_hough %>% purrr::map_dbl(.f = function(x) x$groove[2]),
+  middle_right = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[2]),
+  rollapply_right = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[2])
+)
+
 ```
 
 Visualize  the grooves to see the differences in identifications:
 
 ```{r, fig.width = 8, fig.height=3.3}
+profilesplus <- bullets %>% tidyr::gather(type_side, location, hough_left:rollapply_right) %>%
+  tidyr::separate(type_side, into=c("type", "side")) %>%
+  tidyr::unnest(ccdata)  # gets rid of all the other list variables 
+
+profilesplus %>% 
+  ggplot(aes(x = x, y = value)) +
+  facet_grid(bullet~land) +
+  geom_line() +
+  geom_vline(aes(xintercept=location, colour=type), size=0.75) +
+  theme_bw() +
+  scale_colour_brewer(palette="Dark2")
 
 ```
+
+XXX check the intercept for hough
 
 

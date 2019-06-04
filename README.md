@@ -2,7 +2,7 @@ grooveFinder
 ================
 Heike Hofmann, Susan Vanderplas, Kiegan Rice, Nate Garton, Charlotte
 Roiger
-June 03, 2019
+June 04, 2019
 
 [![CRAN
 Status](http://www.r-pkg.org/badges/version/grooveFinder)](https://cran.r-project.org/package=grooveFinder)
@@ -13,7 +13,7 @@ state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![Travis-CI Build
 Status](https://travis-ci.org/heike/grooveFinder.svg?branch=master)](https://travis-ci.org/heike/grooveFinder)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--03-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--04-yellowgreen.svg)](/commits/master)
 [![Coverage
 status](https://codecov.io/gh/heike/grooveFinder/branch/master/graph/badge.svg)](https://codecov.io/github/heike/grooveFinder?branch=master)
 
@@ -21,14 +21,12 @@ status](https://codecov.io/gh/heike/grooveFinder/branch/master/graph/badge.svg)]
 
 Identify groove locations
 
-Analyze bullet striations using nonparametric methods
-
 ## Comparing lands from two bullets
 
 Striae comparisons between bullets are based on land-to-land
 comparisons.
 
-1.  Load libraries
+1.  Load libraries for setting things up
 
 <!-- end list -->
 
@@ -36,13 +34,11 @@ comparisons.
 library(dplyr)
 library(bulletxtrctr)
 library(x3ptools)
-library(randomForest)
 library(ggplot2)
-library(readr)
 library(nbtrd) # devtools::install_github("csafe-isu/nbtrd")
 ```
 
-2.  `bulletxtrctr` only works on x3p files. See package `x3ptools` at
+2.  `grooveFinder` only works on x3p files. See package `x3ptools` at
     <https://heike.github.io/x3ptools/> for ways to convert different
     file formats into x3p standard files. The NIST Research Ballistics
     Toolmarks data base
@@ -50,9 +46,9 @@ library(nbtrd) # devtools::install_github("csafe-isu/nbtrd")
     access to scans of bullets and cartridge cases from various case
     studies.
 
-In this tutorial, we’ll work with two bullets from a single barrel of
-the Hamby 252 data set. Links to the 12 scans of bullet lands in x3p
-format are provided in the `hamby252demo` object.
+We will work with two bullets from a single barrel of the Hamby 252 data
+set. Links to the 12 scans of bullet lands in x3p format are provided in
+the `hamby252demo` object.
 
 These commands will read in the bullets directly from the NRBTD
 repository, without downloading the files into your working directory:
@@ -61,9 +57,6 @@ repository, without downloading the files into your working directory:
 b1 <- read_bullet(urllist = hamby252demo[[1]])
 b2 <- read_bullet(urllist = hamby252demo[[2]])
 ```
-
-Instead, we could also download the files into a folder named “data” in
-our working directory. This is shown in the sequence of commands below:
 
 ``` r
 if (!dir.exists("README_files/data")) {
@@ -93,72 +86,13 @@ b2$land <- 1:6
 bullets <- rbind(b1, b2)
 ```
 
-We expect data to be recorded at the micron level. The scans posted give
-measurements in meters:
-
-``` r
-bullets$x3p[[1]]$header.info$incrementY
-```
-
-    ## [1] 1.5625e-06
-
-``` r
-bullets$x3p[[1]]$header.info$incrementX
-```
-
-    ## [1] 1.5625e-06
-
-``` r
-summary(as.vector(bullets$x3p[[1]]$surface.matrix))
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##       0       0       0       0       0       0   24829
-
-Change measurements to microns:
+Change measurements to microns and rotate scans:
 
 ``` r
 bullets <- bullets %>% mutate(
   x3p = x3p %>% purrr::map(.f = x3p_m_to_mum)
 )
-```
 
-``` r
-bullets$x3p[[1]]$header.info$incrementY
-```
-
-    ## [1] 1.5625
-
-``` r
-bullets$x3p[[1]]$header.info$incrementX
-```
-
-    ## [1] 1.5625
-
-``` r
-summary(as.vector(bullets$x3p[[1]]$surface.matrix))
-```
-
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   1.513 117.626 166.723 155.933 199.429 216.341   24829
-
-We are working under the assumption that the scans are aligned such that
-the base of the bullet are at the bottom (y = 0) of the image, and the
-land engraved area is displayed left to right from groove to groove,
-i.e. we are assuming that (0,0) is in the bottom left corner of the
-image. In scans where no adjustment was made for the barrel’s twist (not
-recommended) the twist will be visible in the image.
-
-``` r
-image_x3p(bullets$x3p[[1]], file = "man/figures/temp-before.png")
-```
-
-![](man/figures/temp-before.png)<!-- -->
-
-The raw scan needs to be flipped such that the heel is along the bottom
-of the image rather than along the left hand side.
-
-``` r
 # turn the scans such that (0,0) is bottom left
 bullets <- bullets %>% mutate(
   x3p = x3p %>% purrr::map(.f = function(x) x %>% 
@@ -167,16 +101,7 @@ bullets <- bullets %>% mutate(
 ) 
 ```
 
-Scan after the transformation: a clear right twist is visible in the
-right slant of striae and grooves:
-
-``` r
-image_x3p(bullets$x3p[[1]], file = "man/figures/temp-after.png")
-```
-
-![](man/figures/temp-after.png)<!-- -->
-
-3.  Get the ideal cross sections
+2.  Get cross sections for each of the lands:
 
 <!-- end list -->
 
@@ -202,49 +127,55 @@ crosscuts %>%
   theme_bw()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-Note the rather strange cross cut for land 6 in bullet 1. We can look at
-the scan - and find quite pronounced tank rash. However, the extraction
-of the land is at a height of 375, which is not as much affected by the
-rash as the base of the bullet or the top of the scanning area.
-
-Scan of land 6 on bullet 1. The land is affected by quite pronounced
-tank rash:
-
-``` r
-filter(bullets, land==6, bullet==1)$x3p[[1]] %>%
-  x3p_add_hline(yintercept = 375, size = 10, color = "#e6bf98") %>% 
-  image_x3p(file="man/figures/bullet1-land6.png")
-```
-
-![](man/figures/bullet1-land6.png)<!-- -->
-
-4.  Get the groove locations
+3.  Get groove locations
 
 <!-- end list -->
 
 ``` r
 bullets <- bullets %>% mutate(
-  grooves = ccdata %>% 
+  grooves_middle = ccdata %>% 
     purrr::map(.f = cc_locate_grooves, method = "middle", 
-               adjust = 30, return_plot = TRUE)
+               adjust = 30, return_plot = FALSE),
+  grooves_rollapply = ccdata %>% 
+    purrr::map(.f = cc_locate_grooves, method = "rollapply", 
+               adjust = 30, return_plot = FALSE)
+)
+
+bullets <- bullets %>% mutate(
+  grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
+    purrr::map(.f = cc_locate_grooves, method = "hough", 
+               adjust = 30, return_plot = FALSE)
+)
+
+bullets <- bullets %>% mutate(
+  hough_left = grooves_hough %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  middle_left = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  rollapply_left = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[1]),
+  hough_right = grooves_hough %>% purrr::map_dbl(.f = function(x) x$groove[2]),
+  middle_right = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[2]),
+  rollapply_right = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[2])
 )
 ```
 
-Visualize that the grooves are identified correctly (at least enough to
-not distort the final result):
+Visualize the grooves to see the differences in
+identifications:
 
 ``` r
-gridExtra::grid.arrange(
-  bullets$grooves[[1]]$plot, bullets$grooves[[2]]$plot,
-  bullets$grooves[[3]]$plot, bullets$grooves[[4]]$plot,
-  bullets$grooves[[5]]$plot, bullets$grooves[[6]]$plot,
-  bullets$grooves[[7]]$plot, bullets$grooves[[8]]$plot,
-  bullets$grooves[[9]]$plot, bullets$grooves[[10]]$plot,
-  bullets$grooves[[11]]$plot, bullets$grooves[[12]]$plot,
-  ncol = 6
-)
+profilesplus <- bullets %>% tidyr::gather(type_side, location, hough_left:rollapply_right) %>%
+  tidyr::separate(type_side, into=c("type", "side")) %>%
+  tidyr::unnest(ccdata)  # gets rid of all the other list variables 
+
+profilesplus %>% 
+  ggplot(aes(x = x, y = value)) +
+  facet_grid(bullet~land) +
+  geom_line() +
+  geom_vline(aes(xintercept=location, colour=type), size=0.75) +
+  theme_bw() +
+  scale_colour_brewer(palette="Dark2")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+XXX check the intercept for hough
