@@ -2,7 +2,7 @@ grooveFinder
 ================
 Heike Hofmann, Susan Vanderplas, Kiegan Rice, Nate Garton, Charlotte
 Roiger
-June 04, 2019
+June 05, 2019
 
 [![CRAN
 Status](http://www.r-pkg.org/badges/version/grooveFinder)](https://cran.r-project.org/package=grooveFinder)
@@ -13,7 +13,7 @@ state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![Travis-CI Build
 Status](https://travis-ci.org/heike/grooveFinder.svg?branch=master)](https://travis-ci.org/heike/grooveFinder)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--04-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2019--06--05-yellowgreen.svg)](/commits/master)
 [![Coverage
 status](https://codecov.io/gh/heike/grooveFinder/branch/master/graph/badge.svg)](https://codecov.io/github/heike/grooveFinder?branch=master)
 
@@ -163,13 +163,15 @@ profilesplus <- bullets %>% tidyr::gather(type_side, location, hough_left:rollap
   tidyr::unnest(ccdata)  # gets rid of all the other list variables 
 
 profilesplus %>% 
-  ggplot(aes(x = x, y = value)) +
+  ggplot(aes(x = x/1000, y = value)) +
   facet_grid(bullet~land) +
   geom_line() +
   geom_vline(aes(xintercept=location, colour=type), size=0.75) +
   theme_bw() +
   scale_colour_brewer(palette="Dark2") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  xlab("Relative location (in millimeters)") +
+  ylab("Relative height (in microns)")
 ```
 
     ## Warning: Removed 3006 rows containing missing values (geom_vline).

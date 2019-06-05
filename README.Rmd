@@ -142,7 +142,7 @@ profilesplus %>%
   ggplot(aes(x = x/1000, y = value)) +
   facet_grid(bullet~land) +
   geom_line() +
-  geom_vline(aes(xintercept=location, colour=type), size=0.75) +
+  geom_vline(aes(xintercept=location/1000, colour=type), size=0.75) +
   theme_bw() +
   scale_colour_brewer(palette="Dark2") +
   theme(legend.position = "bottom") +
