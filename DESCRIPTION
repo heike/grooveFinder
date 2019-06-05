@@ -26,7 +26,8 @@ Imports:
     locfit,
     x3ptools,
     zoo,
-    magrittr
+    magrittr,
+    dplyr
 Remotes: 
     heike/x3ptools,
     nategarton13/bulletcp,

@@ -38,13 +38,16 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
 #' @importFrom stats quantile median sd na.omit
+#' @importFrom dplyr filter mutate group_by summarize count
+#' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
 get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
-  assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
-              is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
+  assert_that("x3p", class(land))
   # Convert to cimage
   land.x3p <- df_to_x3p(land)
+  assert_that(has_name(land.x3p, "x"), has_name(land.x3p, "y"), has_name(land.x3p, "value"),
+              is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
 
   # HH: this if condition distinguishes between lands based on the aspect ratio.
   # please assume that we have lands that are wider than high.
@@ -76,8 +79,8 @@ get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
   # Subset based on score and angle rotation
 
   hough.df <- hough.df %>%
-    mutate(theta = ifelse(theta <= pi, theta, theta - 2*pi)) %>%
-    filter(score > quantile(score, .999),
+    dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2*pi)) %>%
+    dplyr::filter(score > quantile(score, .999),
            theta > (-pi/4),
            theta < (pi/4))
 
@@ -89,7 +92,7 @@ get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
   # Calculate the intercept of each Hough line
 
   segments <- segments %>%
-    mutate(
+    dplyr::mutate(
       pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
       xaverage = ifelse(theta==0, xintercept, ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2))
 
@@ -106,7 +109,7 @@ get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
   groove <- groove *x3p_get_scale(land.x3p) # change from image width to locations in microns
 
   # summarize the land before visualizing
-  land.summary <- summarize(group_by(land, x), value = median(value, na.rm=TRUE))
+  land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
   if(return_plot){
     return(
