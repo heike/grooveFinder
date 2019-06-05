@@ -2,21 +2,25 @@
 
 #' Re-parameterize the Hough transform output for pixel identification
 #'
-#' Helper function. Should not be used outside the package.
+#' Helper function, that should not be used outside the package.
+#' Computes x and y intercepts for a line given in polar coordinate representation.
+#' A line in polar coordinate representation is given by angle theta (with respect to the x-axis) and
+#' distance of the line to the origin rho.
 #' @param rho Numeric vector containing the shortest distance from the line to the origin
 #' @param theta Numeric vector containing the angle of the line from the positive x axis
 #' @param df Data frame containing output from a Hough transformation
-#' @return HH: Charlotte, could include some more description about the resulting ouput?
+#' @return data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.
 rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
   if (is.null(df)) {
     df <- data.frame(rho = rho, theta = theta)
   }
   stopifnot(c("rho", "theta") %in% names(df))
-  idx <- df$theta ==0
+
   df <- df %>%
-    mutate(yintercept = ifelse(idx, NA, rho/sin(theta)),
-           slope = -cos(theta)/sin(theta),
-           xintercept = ifelse(idx, rho, rho/cos(theta)))
+    mutate(
+      yintercept = ifelse(theta == 0, NA, rho/sin(theta)),
+      slope = -cos(theta)/sin(theta),
+      xintercept = rho/cos(theta)) # cos(theta) == 0 for theta = ± pi/2 but realistically we don't get there
   df
 }
 
@@ -42,12 +46,11 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
-  assert_that("x3p", class(land))
+get_grooves_hough <- function(land, adjust=10, return_plot=F){
+  assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
+              is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
   land.x3p <- df_to_x3p(land)
-  assert_that(has_name(land.x3p, "x"), has_name(land.x3p, "y"), has_name(land.x3p, "value"),
-              is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
 
   # HH: this if condition distinguishes between lands based on the aspect ratio.
   # please assume that we have lands that are wider than high.
@@ -74,23 +77,22 @@ get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
 
   strong <- grad.mag > quantile(grad.mag,.99, na.rm=TRUE)
   # create the hough transform
-  hough.df <- hough_line(strong, data.frame = TRUE)
+  hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) # we want to get values with respect to (0,0) not (1,1)
 
   # Subset based on score and angle rotation
-
   hough.df <- hough.df %>%
     dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2*pi)) %>%
     dplyr::filter(score > quantile(score, .999),
-           theta > (-pi/4),
+           theta > (-pi/4), # identify only vertical(ish) lines
            theta < (pi/4))
 
   summary.save <- summary(hough.df)
 
-  # Find only the good vertical segments
+  # get x and y intercepts  (in pixel dimensions)
   segments <- rho_to_ab(df = hough.df)
 
-  # Calculate the intercept of each Hough line
 
+# browser()
   segments <- segments %>%
     dplyr::mutate(
       pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
@@ -125,14 +127,9 @@ get_grooves_hough <- function(land, value, adjust=10, return_plot=F){
 
 }
 
-#' Return a list of errors and results from get_groove_hough
-#'
-#' @param land dataframe of surface measurements in microns in the x, y, and x direction
-#' @param return_plot return plot of grooves
-#'
+
+#' @rdname get_grooves_hough
 #' @importFrom purrr safely
 #' @export
-
-
 safely_get_grooves_hough <- purrr::safely(get_grooves_hough)
 

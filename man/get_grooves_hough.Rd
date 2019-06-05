@@ -2,9 +2,12 @@
 % Please edit documentation in R/get_grooves_hough.R
 \name{get_grooves_hough}
 \alias{get_grooves_hough}
+\alias{safely_get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, value, adjust = 10, return_plot = F)
+get_grooves_hough(land, adjust = 10, return_plot = F)
+
+safely_get_grooves_hough(...)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
