@@ -37,6 +37,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom imager hough_line
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
+#' @importFrom stats quantile median sd na.omit
 #' @export
 
 get_grooves_hough <- function(land, value, adjust=10, return_plot=F){

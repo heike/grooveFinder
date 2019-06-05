@@ -13,6 +13,9 @@ rho_to_ab(rho = NULL, theta = NULL, df = NULL)
 
 \item{df}{Data frame containing output from a Hough transformation}
 }
+\value{
+HH: Charlotte, could include some more description about the resulting ouput?
+}
 \description{
-Re-parameterize the Hough transform output for pixel identification
+Helper function. Should not be used outside the package.
 }
