@@ -3,3 +3,4 @@
 ^README.*$
 ^\.travis\.yml$
 ^docs$
+^codecov\.yml$
