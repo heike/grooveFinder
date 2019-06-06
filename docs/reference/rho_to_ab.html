@@ -32,7 +32,10 @@
 
 <meta property="og:title" content="Re-parameterize the Hough transform output for pixel identification — rho_to_ab" />
 
-<meta property="og:description" content="Re-parameterize the Hough transform output for pixel identification" />
+<meta property="og:description" content="Helper function, that should not be used outside the package.
+Computes x and y intercepts for a line given in polar coordinate representation.
+A line in polar coordinate representation is given by angle theta (with respect to the x-axis) and
+distance of the line to the origin rho." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -101,7 +104,10 @@
 
     <div class="ref-description">
     
-    <p>Re-parameterize the Hough transform output for pixel identification</p>
+    <p>Helper function, that should not be used outside the package.
+Computes x and y intercepts for a line given in polar coordinate representation.
+A line in polar coordinate representation is given by angle theta (with respect to the x-axis) and
+distance of the line to the origin rho.</p>
     
     </div>
 
@@ -124,13 +130,19 @@
     </tr>
     </table>
     
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.</p>
+    
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-                </ul>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>
