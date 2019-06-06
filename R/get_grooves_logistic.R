@@ -3,7 +3,7 @@
 #' @inheritParams get_grooves_quadratic
 #' @importFrom locfit locfit.robust
 #' @importFrom locfit locfit
-#' @importFrom stats model.matrix
+#' @importFrom stats model.matrix predict
 #' @export
 get_grooves_logisticlegacy <- function(x, value, adjust = 10, # smoothfactor = 15,
                                        # groove_cutoff = 400,

@@ -6,6 +6,7 @@
 #' @param return_plot return plot?
 #' @return list of groove vector and plot of crosscut, if return_plot is true
 #' @import assertthat
+#' @importFrom dplyr filter mutate group_by summarize count
 #' @export
 #' @examples
 #' \dontrun{
