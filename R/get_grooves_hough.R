@@ -77,7 +77,6 @@ get_grooves_hough <- function(land, return_plot=F){
            theta > (-pi/4),
            theta < (pi/4))
 
-  summary.save <- summary(hough.df)
 
   # Find only the good vertical segments
   segments <- rho_to_ab(df = hough.df)
