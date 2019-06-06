@@ -53,6 +53,10 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   # Convert to cimage
   land.x3p <- df_to_x3p(land)
 
+  # visible bindings problem
+  theta <- score <- rho <- xintercept <- yintercept <- 0
+  slope <- x <- value <- 0
+
   # HH: this if condition distinguishes between lands based on the aspect ratio.
   # please assume that we have lands that are wider than high.
   # If they are not, spit out a warning rather than different code.
@@ -79,6 +83,10 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   strong <- grad.mag > quantile(grad.mag,.99, na.rm=TRUE)
   # create the hough transform
   hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) # we want to get values with respect to (0,0) not (1,1)
+  assert_that(
+    has_name(hough.df, "theta"),
+    has_name(hough.df, "rho"),
+    has_name(hough.df, "score"))
 
   # Subset based on score and angle rotation
   hough.df <- hough.df %>%
@@ -93,7 +101,14 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
 
   # get x and y intercepts  (in pixel dimensions)
   segments <- rho_to_ab(df = hough.df)
-
+  assert_that(
+    has_name(hough.df, "theta"),
+    has_name(hough.df, "rho"),
+    has_name(hough.df, "score"),
+    has_name(hough.df, "xintercept"),
+    has_name(hough.df, "yintercept"),
+    has_name(hough.df, "slope")
+  )
 
 # browser()
   segments <- segments %>%
@@ -129,10 +144,4 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   }
 
 }
-
-
-#' @rdname get_grooves_hough
-#' @importFrom purrr safely
-#' @export
-safely_get_grooves_hough <- purrr::safely(get_grooves_hough)
 
