@@ -14,8 +14,11 @@ rho_to_ab(rho = NULL, theta = NULL, df = NULL)
 \item{df}{Data frame containing output from a Hough transformation}
 }
 \value{
-HH: Charlotte, could include some more description about the resulting ouput?
+data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.
 }
 \description{
-Helper function. Should not be used outside the package.
+Helper function, that should not be used outside the package.
+Computes x and y intercepts for a line given in polar coordinate representation.
+A line in polar coordinate representation is given by angle theta (with respect to the x-axis) and
+distance of the line to the origin rho.
 }

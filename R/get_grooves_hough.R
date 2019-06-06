@@ -31,6 +31,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
 #' Pi/4.
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
+#' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
 #' @param return_plot return plot of grooves
 #' @return list object consisting of a vector of groove values (left and right) and, if return_plot is TRUE, a plot of the profile with the groove locations
@@ -46,7 +47,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, adjust=10, return_plot=F){
+get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -82,9 +83,11 @@ get_grooves_hough <- function(land, adjust=10, return_plot=F){
   # Subset based on score and angle rotation
   hough.df <- hough.df %>%
     dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2*pi)) %>%
-    dplyr::filter(score > quantile(score, .999),
-           theta > (-pi/4), # identify only vertical(ish) lines
-           theta < (pi/4))
+    dplyr::filter(score > quantile(score, qu),
+           theta > (-pi/16), # identify only vertical(ish) lines
+           theta < (pi/16),
+           (rho < abs(width(strong))*1/6 | rho > width(strong)*5/6) # at either end of the LEA
+           )
 
   summary.save <- summary(hough.df)
 

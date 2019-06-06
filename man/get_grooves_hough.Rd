@@ -5,12 +5,14 @@
 \alias{safely_get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, adjust = 10, return_plot = F)
+get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = F)
 
 safely_get_grooves_hough(...)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
+
+\item{qu}{quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.}
 
 \item{adjust}{positive number to adjust the grooves inward}
 

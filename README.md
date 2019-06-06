@@ -140,7 +140,7 @@ bullets <- bullets %>% mutate(
 bullets <- bullets %>% mutate(
   grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
     purrr::map(.f = cc_locate_grooves, method = "hough", 
-               adjust = 30, return_plot = FALSE)
+               adjust = 30, qu = 0.9, return_plot = FALSE)
 )
 
 bullets <- bullets %>% mutate(
@@ -173,7 +173,5 @@ profilesplus %>%
   xlab("Relative location (in millimeters)") +
   ylab("Relative height (in microns)")
 ```
-
-    ## Warning: Removed 3006 rows containing missing values (geom_vline).
 
 ![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
