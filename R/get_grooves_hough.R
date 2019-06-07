@@ -112,7 +112,6 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
 # browser()
   segments <- segments %>%
     dplyr::mutate(
-      pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
       xaverage = ifelse(theta==0, xintercept, ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2))
 
   good_vertical_segs <- segments$xaverage
@@ -124,8 +123,53 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   closelthird <- good_vertical_segs[which.min(abs(good_vertical_segs - lthird))]
   closeuthird <- good_vertical_segs[which.min(abs(good_vertical_segs - uthird))]
 
-  groove <- c(closelthird, closeuthird) + adjust*c(1,-1) # adjust locations inward from steep drop-off
-  groove <- groove *x3p_get_scale(land.x3p) # change from image width to locations in microns
+  # Find the line equation that represents the nearest groove
+  lower.bestfit <- segments %>% filter(xaverage == closelthird)
+  upper.bestfit <- segments %>% filter(xaverage == closeuthird)
+
+  # Create two functions to calculate the x output for each y input
+  # CR: I designed these functions to accept a numerical height of cross cut input
+  # But is that what we want?
+
+  # Return left groove
+
+  left_groove_fit <- function(yinput){
+    assert_that(is.numeric(yinput))
+
+    if(lower.bestfit$theta == 0){
+      left.groove <- lower.bestfit$rho
+    }
+    else{
+      left.groove <- ((yinput - (lower.bestfit$yintercept)*x3p_get_scale(land.x3p))
+                  /lower.bestfit$slope) + 1
+    }
+    return(left.groove)
+  }
+
+  # Return Right Groove
+
+  right_groove_fit <- function(yinput){
+    if(upper.bestfit$theta == 0){
+      right.groove <- upper.bestfit$rho
+    }
+    else{
+      right.groove <- ((yinput - (upper.bestfit$yintercept)*x3p_get_scale(land.x3p))
+                  /upper.bestfit$slope) - 1
+    }
+    return(right.groove)
+  }
+
+  # If we return functions cannot return plot
+
+  # Adjust locations inward from steep drop-off
+  groove <- c(closelthird, closeuthird) + adjust*c(1,-1)
+
+  # change from image width to locations in microns
+  groove <- groove *x3p_get_scale(land.x3p)
+
+
+
+
 
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
