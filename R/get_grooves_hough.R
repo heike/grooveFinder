@@ -26,6 +26,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 
 
 
+
 #' Use Hough transformation to identify groove locations.
 #'
 #' Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
@@ -34,7 +35,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
 #' @param return_plot return plot of grooves
-#' @return list object consisting of a vector of groove values (left and right) and, if return_plot is TRUE, a plot of the profile with the groove locations
+#' @return list object consisting of a vector of average groove values (left and right), if return_plot is TRUE, a plot of the profile with the groove locations
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -167,9 +168,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   groove <- c(closelthird, closeuthird) + adjust*c(1,-1)
 
   # change from image width to locations in microns
-  groove <- groove *x3p_get_scale(land.x3p)
-
-
+  close.average.groove <- groove *x3p_get_scale(land.x3p)
 
 
 
@@ -179,13 +178,15 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   if(return_plot){
     return(
       list(
-        groove,
+        close.average.groove,
+        left_groove_fit,
+        right_groove_fit,
         plot = grooves_plot(land = land.summary, grooves = groove)
       )
     )
   }
   else{
-    return(list(groove = groove))
+    return(list(close.average.groove, left_groove_fit, right_groove_fit))
   }
 
 }
