@@ -143,7 +143,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
     else{
       # Do I need the scaled + 1 to adjust location of groove?
       left.groove <- ((yinput - (lower.bestfit$yintercept)*x3p_get_scale(land.x3p))
-                  /lower.bestfit$slope) + 1*x3p_get_scale(land.x3p)
+                  /lower.bestfit$slope) + 1*adjust*x3p_get_scale(land.x3p)
     }
     return(left.groove)
   }
@@ -156,8 +156,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
     }
     else{
       # Do I need the scaled - 1 to adjust location of groove?
-      right.groove <- ((yinput - (upper.bestfit$yintercept)*x3p_get_scale(land.x3p))
-                  /upper.bestfit$slope) - 1*x3p_get_scale(land.x3p)
+      right.groove <- (((yinput - (upper.bestfit$yintercept)*x3p_get_scale(land.x3p))
+                  /upper.bestfit$slope) - 1*adjust*x3p_get_scale(land.x3p))
     }
     return(right.groove)
   }
