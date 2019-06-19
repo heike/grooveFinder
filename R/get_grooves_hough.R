@@ -114,7 +114,11 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   segments <- segments %>%
     dplyr::mutate(
       pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
-      xaverage = ifelse(theta==0, xintercept, ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2))
+      xaverage = ifelse(theta==0, xintercept,
+                ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2),
+      xbottom = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
+      xtop = xintercept
+      )
 
   good_vertical_segs <- segments$xaverage
 
