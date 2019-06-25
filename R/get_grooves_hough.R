@@ -34,7 +34,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
 #' @param return_plot return plot of grooves
-#' @return list object consisting of a vector of groove values (left and right) and, if return_plot is TRUE, a plot of the profile with the groove locations
+#' @return list object consisting of a vector of average groove values (left and right), if return_plot is TRUE, a plot of the profile with the groove locations, and two functions to describe the location of grooves at each y location of a crosscut
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -97,7 +97,6 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
            (rho < abs(width(strong))*1/6 | rho > width(strong)*5/6) # at either end of the LEA
            )
 
-  summary.save <- summary(hough.df)
 
   # get x and y intercepts  (in pixel dimensions)
   segments <- rho_to_ab(df = hough.df)
@@ -132,6 +131,44 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
   groove <- c(closelthird, closeuthird) + adjust*c(1,-1) # adjust locations inward from steep drop-off
   groove <- groove *x3p_get_scale(land.x3p) # change from image width to locations in microns
 
+  # Find the line equation that represents the nearest groove
+
+  lower.bestfit <- segments %>% filter(xaverage == closelthird)
+  upper.bestfit <- segments %>% filter(xaverage == closeuthird)
+
+  # Create two functions to calculate the x output for each y input
+  left_groove_fit <- function(yinput){
+    assertthat::assert_that(is.numeric(yinput))
+
+    if(lower.bestfit$theta == 0){
+      left.groove <- lower.bestfit$rho
+    }
+    else{
+      # Do I need the scaled +1 to adjust location of the groove?
+      left.groove <- ((yinput - (lower.bestfit$yintercept)*x3p_get_scale(land.x3p))
+                      /lower.bestfit$slope) + 1*adjust*x3p_get_scale(land.x3p)
+    }
+    return(left.groove)
+  }
+
+  right_groove_fit <- function(yinput){
+    assertthat::assert_that(is.numeric(yinput))
+
+    if(upper.bestfit$theta == 0){
+      right.groove <- upper.bestfit$rho
+    }
+    else{
+      # Do I need the scaled +1 to adjust location of the groove?
+      right.groove <- ((yinput - (upper.bestfit$yintercept)*x3p_get_scale(land.x3p))
+                      /upper.bestfit$slope) - 1*adjust*x3p_get_scale(land.x3p)
+    }
+    return(right.groove)
+  }
+
+  groove <- c(closelthird, closeuthird) + adjust*c(1,-1) # adjust locations inward from steep drop-off
+  groove <- groove *x3p_get_scale(land.x3p) # change from image width to locations in microns
+
+
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
@@ -139,12 +176,14 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot=F){
     return(
       list(
         groove,
+        left_groove_fit,
+        right_groove_fit,
         plot = grooves_plot(land = land.summary, grooves = groove)
       )
     )
   }
   else{
-    return(list(groove = groove))
+    return(list(groove = groove, left_groove_fit, right_groove_fit))
   }
 
 }
