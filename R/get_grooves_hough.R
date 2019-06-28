@@ -138,11 +138,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   slope.right <- -height(strong)/(top.right - bottom.right)
   yint.right <- (-(slope.right*top.right))*x3p_get_scale(land.x3p)
 
-  slope <- c(slope.left, slope.right)
-  yint <- c(yint.left, yint.right)
-
-  # Turn into a dataframe for processing with second function
-  fit.df <- data.frame(slope, yint)
+  fit.df <- data.frame(slope.left, yint.left, slope.right, yint.right)
 
 
   # summarize the land before visualizing
@@ -164,20 +160,25 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
 #'
 
 groove_fit <- function(fit.df, y.input, return_plot = F){
-  assert_that(is.numeric(fit.df$slope), is.numeric(fit.df$yint),
+  assert_that(is.numeric(fit.df$slope.left), is.numeric(fit.df$yint.left),
+              is.numeric(fit.df$slope.right), is.numeric(fit.df$yint.right),
               is.numeric(y.input))
   if(is.infinite(fit.df$slope)){
-    groove.fit <- (-fit.df$yint/fit.df$slope)
+    groove.left <- (-fit.df$yint.left/fit.df$slope.left)
+    groove.right <- (-fit.df$yint.right/fit.df$slope.right)
+    groove.fit <- c(groove.left, groove.right)
   }
   else{
-    groove.fit <- (y.input - fit.df$yint/fit.df$slope)
+    groove.left <- (y.input - fit.df$yint.left/fit.df$slope.left)
+    groove.right <- (y.input - fit.df$yint.right/fit.df$slope.right)
+    groove.fit <- c(groove.left, groove.right)
   }
 
   if(return_plot){
     return(
       list(
         groove.fit,
-        plot = grooves_plot(land = land.summary, grooves = groove)
+        plot = grooves_plot(land = land.summary, grooves = groove.fit)
       )
     )
   }
