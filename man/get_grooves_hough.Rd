@@ -14,9 +14,9 @@ get_grooves_hough(land, qu = 0.999, adjust = 10)
 \item{adjust}{positive number to adjust the grooves inward}
 }
 \value{
-list object consisting of the slope and intercept for the left and right groove, and if return_plot is TRUE, a plot of the profile with the groove locations.
+list object consisting of functions to describe the left and right groove
 }
 \description{
-Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
+Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
 Pi/4.
 }

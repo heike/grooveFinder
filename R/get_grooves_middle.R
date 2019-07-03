@@ -5,7 +5,7 @@
 #' @param middle middle percent to use for the identification
 #' @param return_plot return plot?
 #' @return list of groove vector and plot of crosscut, if return_plot is true
-#' @import assertthat
+#' @import assertthat assert_that
 #' @importFrom dplyr filter mutate group_by summarize count
 #' @export
 #' @examples

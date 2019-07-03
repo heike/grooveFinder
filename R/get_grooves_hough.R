@@ -10,6 +10,8 @@
 #' @param theta Numeric vector containing the angle of the line from the positive x axis
 #' @param df Data frame containing output from a Hough transformation
 #' @return data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.
+
+
 rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
   if (is.null(df)) {
     df <- data.frame(rho = rho, theta = theta)
@@ -28,12 +30,12 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 
 #' Use Hough transformation to identify groove locations.
 #'
-#' Choose strong edges based on whether scores exceed the 99.75% percentile of scores and if the angle of line is less than
+#' Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
 #' Pi/4.
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
-#' @return list object consisting of the slope and intercept for the left and right groove, and if return_plot is TRUE, a plot of the profile with the groove locations.
+#' @return list object consisting of functions to describe the left and right groove
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -45,7 +47,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom dplyr filter mutate group_by summarize count
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
-#' @examples
+
 get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
@@ -139,7 +141,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
 
  #Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput){
-    assertthat::assert_that(is.numeric(yinput))
+    assert_that(is.numeric(yinput))
 
     if(is.infinite(slope.left)){
       left.groove <- bottom.left
@@ -153,7 +155,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   }
 
   right_groove_fit <- function(yinput){
-    assertthat::assert_that(is.numeric(yinput))
+    assert_that(is.numeric(yinput))
 
     if(is.infinite(slope.right)){
       right.groove <- bottom.right
@@ -167,6 +169,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
 
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
+
 
   return(list(left_groove_fit, right_groove_fit))
 }

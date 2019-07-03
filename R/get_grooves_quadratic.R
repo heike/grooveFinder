@@ -7,6 +7,7 @@
 #' @param return_plot return plot of grooves?
 #' @return list of groove vector and plot of crosscut with shoulder locations
 #' @importFrom MASS rlm
+#' @importFrom assertthat assert_that
 #' @export
 #' @examples
 #' \dontrun{
