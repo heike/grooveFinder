@@ -3,7 +3,7 @@
 #' @param land data.frame with columns x and value
 #' @param grooves numeric vector of length 2 identifying both grooves.
 #'        If only one groove is identified, the other should be NA
-#' @import assertthat assert_that
+#' @importFrom assertthat assert_that
 #' @import ggplot2
 #' @return a ggplot2 object
 grooves_plot <- function(land, grooves) {
