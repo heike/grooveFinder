@@ -134,57 +134,41 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   slope.left <- -height(strong)/(top.left - bottom.left)
   yint.left <- (-(slope.left*top.left))*x3p_get_scale(land.x3p)
 
-
   slope.right <- -height(strong)/(top.right - bottom.right)
   yint.right <- (-(slope.right*top.right))*x3p_get_scale(land.x3p)
 
-  fit.df <- data.frame(slope.left, yint.left, slope.right, yint.right)
+ #Crate two functions to calculate the x output for each y input
+  left_groove_fit <- function(yinput){
+    assertthat::assert_that(is.numeric(yinput))
 
+    if(is.infinite(slope.left)){
+      left.groove <- bottom.left
+    }
+
+    else{
+      # Do I need the scaled +1 to adjust location of the groove?
+      left.groove <- ((yinput - yint.left)/slope.left)
+    }
+    return(left.groove)
+  }
+
+  right_groove_fit <- function(yinput){
+    assertthat::assert_that(is.numeric(yinput))
+
+    if(is.infinite(slope.right)){
+      right.groove <- bottom.right
+    }
+
+    else{
+      right.groove <- ((yinput - yint.right)/slope.right)
+    }
+    return(right.groove)
+  }
 
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
-  return(fit.df)
-}
-
-
-#' Calculate groove location from cross cut given line hough line information
-#' Slope and intercept based on the top most and bottom most point of the GEAs.
-#' @param y.input a numeric y location of where the cross cut was taken from the bullet land
-#' @param slope a numeric slope corresponding to the line determined from the Hough transform
-#' @param intercept a numeric yintercept corresponding to the line determined from the Hough transform
-#' @param return_plot return plot of grooves as well as location of right and left grooves
-#' @return a numeric estimate of a groove location based on the equation given from last hough output
-#' @import assertthat assert_that
-#' @export
-#'
-
-groove_fit <- function(fit.df, y.input, return_plot = F){
-  assert_that(is.numeric(fit.df$slope.left), is.numeric(fit.df$yint.left),
-              is.numeric(fit.df$slope.right), is.numeric(fit.df$yint.right),
-              is.numeric(y.input))
-  if(is.infinite(fit.df$slope)){
-    groove.left <- (-fit.df$yint.left/fit.df$slope.left)
-    groove.right <- (-fit.df$yint.right/fit.df$slope.right)
-    groove.fit <- c(groove.left, groove.right)
-  }
-  else{
-    groove.left <- (y.input - fit.df$yint.left/fit.df$slope.left)
-    groove.right <- (y.input - fit.df$yint.right/fit.df$slope.right)
-    groove.fit <- c(groove.left, groove.right)
-  }
-
-  if(return_plot){
-    return(
-      list(
-        groove.fit,
-        plot = grooves_plot(land = land.summary, grooves = groove.fit)
-      )
-    )
-  }
-  else{
-    return(list(groove.fit))
-  }
+  return(list(left_groove_fit, right_groove_fit))
 }
 
 
