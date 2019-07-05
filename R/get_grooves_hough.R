@@ -171,7 +171,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
 
-  return(list(left_groove_fit, right_groove_fit))
+  return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 }
 
 
