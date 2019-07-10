@@ -48,7 +48,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, qu = 0.999, adjust=10){
+get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = F){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -170,8 +170,19 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
+  if(return_plot){
+    return(
+      print("Cannot generate plot without cross cut information")
+    )
+  }
+  else{
+    return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
+  }
 
-  return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
+}
+
+
+
 }
 
 
