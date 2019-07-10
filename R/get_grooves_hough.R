@@ -93,10 +93,10 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   hough.df <- hough.df %>%
     dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2*pi)) %>%
     dplyr::filter(score > quantile(score, qu),
-           theta > (-pi/16), # identify only vertical(ish) lines
-           theta < (pi/16),
-           (rho < abs(width(strong))*1/6 | rho > width(strong)*5/6) # at either end of the LEA
-           )
+                  theta > (-pi/16), # identify only vertical(ish) lines
+                  theta < (pi/16),
+                  (rho < abs(width(strong))*1/6 | rho > width(strong)*5/6) # at either end of the LEA
+    )
 
 
   # get x and y intercepts  (in pixel dimensions)
@@ -110,15 +110,15 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
     has_name(segments, "slope")
   )
 
-# browser()
+  # browser()
   segments <- segments %>%
     dplyr::mutate(
       pixset.intercept = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
       xaverage = ifelse(theta==0, xintercept,
-                ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2),
+                        ((0-yintercept)/slope + (height(strong) - yintercept)/slope)/2),
       xbottom = ifelse(theta==0, xintercept, (height(strong) - yintercept)/slope),
       xtop = xintercept
-      )
+    )
 
   # Find the middle 2/3rds
 
@@ -139,7 +139,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   slope.right <- -height(strong)/(top.right - bottom.right)
   yint.right <- (-(slope.right*top.right))*x3p_get_scale(land.x3p)
 
- #Crate two functions to calculate the x output for each y input
+  #Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput){
     assert_that(is.numeric(yinput))
 
@@ -170,8 +170,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
-  return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 
+  return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 }
 
 
