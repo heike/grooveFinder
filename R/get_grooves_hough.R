@@ -183,7 +183,5 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = F){
 
 
 
-}
-
 
 
