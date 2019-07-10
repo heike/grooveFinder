@@ -38,7 +38,6 @@ Suggests:
     here,
     covr,
     testthat,
-    testthis,
     knitr, 
     rmarkdown,
     nbtrd
