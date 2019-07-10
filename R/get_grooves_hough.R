@@ -35,7 +35,6 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
-#' @param return_plot Should in theory return a plot, not available for this method, including for compatability with cc_locate_grooves
 #' @return list object consisting of functions to describe the left and right groove
 #'
 #' @importFrom x3ptools df_to_x3p
@@ -49,7 +48,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
+get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -171,14 +170,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
   # summarize the land before visualizing
   land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm=TRUE))
 
-  if(return_plot){
-    return(
-      print("Cannot generate plot without cross cut information")
-    )
-  }
-  else{
-    return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
-  }
+  return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 
 }
 
