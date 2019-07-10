@@ -49,7 +49,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = F){
+get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
