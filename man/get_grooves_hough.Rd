@@ -4,7 +4,7 @@
 \alias{get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, qu = 0.999, adjust = 10)
+get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = F)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}

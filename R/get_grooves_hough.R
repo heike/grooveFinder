@@ -35,6 +35,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
+#' @param return_plot Should in theory return a plot, not available for this method, including for compatability with cc_locate_grooves
 #' @return list object consisting of functions to describe the left and right groove
 #'
 #' @importFrom x3ptools df_to_x3p

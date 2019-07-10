@@ -124,8 +124,8 @@ bullets <- bullets %>% mutate(
 # Get Hough Groove Locations, this may take some time
 bullets <- bullets %>%
   mutate(
-    hough_fit = x3p %>% purrr::map(.f = x3p_to_df) %>%
-    purrr::map(.f = get_grooves_hough,
+    hough_fit = ccdata %>% purrr::map(.f = x3p_to_df) %>%
+    purrr::map(.f = cc_locate_grooves, method = "hough",
                qu = 0.99)
   )
 
