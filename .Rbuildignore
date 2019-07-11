@@ -4,3 +4,5 @@
 ^\.travis\.yml$
 ^docs$
 ^codecov\.yml$
+^data/Bullet.*$
+^data/Bullet.*/.*$
