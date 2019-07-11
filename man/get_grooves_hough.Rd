@@ -4,7 +4,7 @@
 \alias{get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = F)
+get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = FALSE)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
@@ -13,7 +13,7 @@ get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = F)
 
 \item{adjust}{positive number to adjust the grooves inward}
 
-\item{return_plot}{Should in theory return a plot, not available for this method, including for compatability with cc_locate_grooves}
+\item{return_plot}{boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE}
 }
 \value{
 list object consisting of functions to describe the left and right groove

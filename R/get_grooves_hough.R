@@ -35,6 +35,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
+#' @param return_plot boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE
 #' @return list object consisting of functions to describe the left and right groove
 #'
 #' @importFrom x3ptools df_to_x3p
@@ -48,7 +49,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
 #' @export
 
-get_grooves_hough <- function(land, qu = 0.999, adjust=10){
+get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
   assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
               is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
   # Convert to cimage
@@ -142,7 +143,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
   #Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput){
     assert_that(is.numeric(yinput))
-
+    if (length(slope.left) == 0) return(NA) # hough didn't find a groove
     if(is.infinite(slope.left)){
       left.groove <- bottom.left
     }
@@ -156,6 +157,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10){
 
   right_groove_fit <- function(yinput){
     assert_that(is.numeric(yinput))
+    if (length(slope.right) == 0) return(NA) # hough didn't find a groove
 
     if(is.infinite(slope.right)){
       right.groove <- bottom.right

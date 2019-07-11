@@ -112,8 +112,17 @@ bullets <- bullets %>% mutate(
   grooves_rollapply = ccdata %>% 
     purrr::map(.f = cc_locate_grooves, method = "rollapply", 
                adjust = 30, return_plot = FALSE)
-)
+  )
 
+bullets <- bullets %>% mutate(
+  grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
+    purrr::map(.f = cc_locate_grooves, method = "hough", 
+               adjust = 30, return_plot = FALSE)
+)
+```
+
+Extract groove locations from groove objects:
+```{r}
 bullets <- bullets %>% mutate(
   middle_left = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[1]),
   rollapply_left = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[1]),
@@ -121,41 +130,31 @@ bullets <- bullets %>% mutate(
   rollapply_right = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[2])
 )
 
-# Get Hough Groove Locations, this may take some time
-bullets <- bullets %>%
-  mutate(
-    hough_fit = x3p %>% purrr::map(.f = x3p_to_df) %>%
-    purrr::map(.f = get_grooves_hough,
-               qu = 0.99)
-  )
-
+# grooves_hough are functions
 # Find the left and right groove locations for the particular cross cuts
 bullets <- bullets %>%
   mutate(
-    hough_left = purrr::map(1:nrow(bullets), function(x){bullets$hough_fit[[x]]$left.groove.fit(crosscut[x])}),
-    hough_right = purrr::map(1:nrow(bullets),
-function(x){bullets$hough_fit[[x]]$right.groove.fit(crosscut[x])})
+    hough_left = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$left.groove.fit(x)
+      }),
+    hough_right = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$right.groove.fit(x)
+      })
   )
 
-# In order to do side-by-side comparisons create new format for hough grooves
-
-bullets <- bullets %>%
-  mutate(
-    grooves_hough = purrr::map(1:nrow(bullets),
-function(x){list(groove = unlist(c(bullets$hough_left[[x]],
-                     bullets$hough_right[[x]])))})
-  )
-
-# Re-order variables for gather
-bullets <- bullets %>%
-  select(-hough_fit) %>%
-  select(1:9, "grooves_hough", everything())
 ```
 
 Visualize  the grooves to see the differences in identifications between the different methods:
 
 ```{r, fig.width = 8, fig.height=3.7}
-profilesplus <- bullets %>% tidyr::gather(type_side, location, hough_left:rollapply_right) %>%
+profilesplus <- bullets %>%
+  tidyr::gather(type_side, location, middle_left:hough_right) %>%
   tidyr::separate(type_side, into=c("type", "side")) %>%
   tidyr::unnest(ccdata)  # gets rid of all the other list variables 
 
