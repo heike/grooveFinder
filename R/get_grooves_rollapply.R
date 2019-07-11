@@ -20,16 +20,16 @@
 #' # Set the data up to be read in, cleaned, etc.
 #' library(bulletxtrctr)
 #' library(x3ptools)
-#'
+#' 
 #' example_data <- bullet_pipeline(
 #'   location = list(Bullet1 = c(hamby252demo$bullet1[3])),
 #'   stop_at_step = "crosscut",
 #'   x3p_clean = function(x) x %>%
-#'       x3p_scale_unit(scale_by=10^6) %>%
+#'       x3p_scale_unit(scale_by = 10^6) %>%
 #'       rotate_x3p(angle = -90) %>%
 #'       y_flip_x3p()
 #' )
-#'
+#' 
 #' get_grooves_rollapply(example_data$ccdata[[1]]$x,
 #'   example_data$ccdata[[1]]$value,
 #'   adjust = 30, return_plot = T
@@ -81,8 +81,8 @@ get_grooves_rollapply <- function(x, value, smoothfactor = 15, adjust = 10,
   # parameter is equal to FALSE
   if (second_smooth) {
     smoothed_truefalse <- rollapply(smoothed, smoothfactor,
-                                    function(x) which_fun(x),
-                                    partial = TRUE
+      function(x) which_fun(x),
+      partial = TRUE
     )
   } else {
     smoothed_truefalse <- smoothed
@@ -133,7 +133,7 @@ get_grooves_rollapply <- function(x, value, smoothfactor = 15, adjust = 10,
     groove_ind <- 1
   }
   if (length(groove_ind2) == 0 ||
-      groove_ind2 < length(land$value) - groove_cutoff) {
+    groove_ind2 < length(land$value) - groove_cutoff) {
     groove_ind2 <- length(land$value)
   }
 

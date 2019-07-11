@@ -17,4 +17,3 @@ grooves_plot <- function(land, grooves) {
     geom_vline(xintercept = grooves[1], colour = "blue") +
     geom_vline(xintercept = grooves[2], colour = "blue")
 }
-

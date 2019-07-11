@@ -72,7 +72,7 @@ get_grooves_logisticlegacy <- function(x, value, adjust = 10, # smoothfactor = 1
 
   land <- na.omit(land)
   X <- cbind(1, model.matrix(
-    ~rlo_resid_std + I(rlo_resid_std^2) + side +
+    ~ rlo_resid_std + I(rlo_resid_std^2) + side +
       depth_std + side * depth_std + xint1_std +
       xint2_std + range_50 + numNA_50 + ind_2mad +
       numpos_50 - 1,

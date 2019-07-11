@@ -14,16 +14,16 @@
 #' # Set the data up to be read in, cleaned, etc.
 #' library(bulletxtrctr)
 #' library(x3ptools)
-#'
+#' 
 #' example_data <- bullet_pipeline(
 #'   location = list(Bullet1 = c(hamby252demo$bullet1[3])),
 #'   stop_at_step = "crosscut",
 #'   x3p_clean = function(x) x %>%
-#'       x3p_scale_unit(scale_by=10^6) %>%
+#'       x3p_scale_unit(scale_by = 10^6) %>%
 #'       rotate_x3p(angle = -90) %>%
 #'       y_flip_x3p()
 #' )
-#'
+#' 
 #' get_grooves_quadratic(example_data$ccdata[[1]]$x,
 #'   example_data$ccdata[[1]]$value,
 #'   adjust = 30, return_plot = T

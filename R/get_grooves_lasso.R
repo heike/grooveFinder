@@ -11,12 +11,14 @@
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
 #' @export
-get_grooves_lasso <- function(x, value, lasso_method = 'basic', pred_cutoff = ifelse(lasso_method == 'basic', .07, 0.06), return_plot = F) {
+get_grooves_lasso <- function(x, value, lasso_method = "basic", pred_cutoff = ifelse(lasso_method == "basic", .07, 0.06), return_plot = F) {
   land <- data.frame(x = x, value = value)
   original_land <- land
 
-  assert_that(has_name(land, "x"), has_name(land, "value"),
-              is.numeric(land$x), is.numeric(land$value))
+  assert_that(
+    has_name(land, "x"), has_name(land, "value"),
+    is.numeric(land$x), is.numeric(land$value)
+  )
 
   assert_that(lasso_method %in% c("basic", "full"))
   assert_that(pred_cutoff > 0, pred_cutoff < 1)
@@ -35,7 +37,7 @@ get_grooves_lasso <- function(x, value, lasso_method = 'basic', pred_cutoff = if
   diff_mx <- mx / 2 - land$x
   ## Use this method because some data may have shifted x values
   median <- land$x[which.min(abs(diff_mx))] # changed abs(tst_mx) to abs(diff_mx) - tst_mx not defined
-  #median <- median(land$x) # some of the houston data appears to have a shifted x
+  # median <- median(land$x) # some of the houston data appears to have a shifted x
   land$side <- "right"
   land$side <- ifelse(land$x <= median, "left", land$side)
   land$depth <- abs(land$x - median)
@@ -82,21 +84,21 @@ get_grooves_lasso <- function(x, value, lasso_method = 'basic', pred_cutoff = if
   ## now get logistic predictions
   land <- na.omit(land)
 
-  if (lasso_method == 'basic') {
+  if (lasso_method == "basic") {
     X <- cbind(1, model.matrix(
-      ~rlo_resid_std + I(rlo_resid_std^2) + side +
+      ~ rlo_resid_std + I(rlo_resid_std^2) + side +
         depth_std + side * depth_std + xint1_std +
         xint2_std + range_50 + numNA_50 + ind_2mad +
         numpos_50 + ind_edges - 1,
       land
     ))
     ymean <- X %*% lasso_simple
-  } else if (lasso_method == 'full') {
+  } else if (lasso_method == "full") {
     X <- cbind(1, model.matrix(
-      ~(rlo_resid_std + I(rlo_resid_std^2) + side +
-          depth_std + xint1_std +
-          xint2_std + range_50 + numNA_50 + ind_2mad +
-          numpos_50 + ind_edges)^2 - 1,
+      ~ (rlo_resid_std + I(rlo_resid_std^2) + side +
+        depth_std + xint1_std +
+        xint2_std + range_50 + numNA_50 + ind_2mad +
+        numpos_50 + ind_edges)^2 - 1,
       land
     ))
     ymean <- X %*% lasso_interactions
@@ -119,4 +121,3 @@ get_grooves_lasso <- function(x, value, lasso_method = 'basic', pred_cutoff = if
     return(list(groove = groove))
   }
 }
-
