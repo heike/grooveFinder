@@ -116,7 +116,7 @@ bullets <- bullets %>% mutate(
 
 bullets <- bullets %>% mutate(
   grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
-    purrr::map(.f = cc_locate_grooves, method = "hough", 
+    purrr::map(.f = cc_locate_grooves, method = "hough", qu = 0.99,
                adjust = 30, return_plot = FALSE)
 )
 ```
@@ -164,7 +164,7 @@ profilesplus %>%
   geom_line() +
   geom_vline(aes(xintercept=location/1000, colour=type), size=0.75) +
   theme_bw() +
-  scale_colour_brewer(palette="Dark2") +
+  scale_colour_brewer(palette="Paired") +
   theme(legend.position = "bottom") +
   xlab("Relative location (in millimeters)") +
   ylab("Relative height (in microns)")
