@@ -124,6 +124,11 @@ bullets <- bullets %>% mutate(
 Extract groove locations from groove objects:
 ```{r}
 bullets <- bullets %>% mutate(
+  grooves_hough = x3p %>% 
+    purrr::map(~x3p_to_df(.) %>% 
+                 cc_locate_grooves( method = "hough", adjust = 30, return_plot = F, qu = .999))
+)
+bullets <- bullets %>% mutate(
   middle_left = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[1]),
   rollapply_left = grooves_rollapply %>% purrr::map_dbl(.f = function(x) x$groove[1]),
   middle_right = grooves_middle %>% purrr::map_dbl(.f = function(x) x$groove[2]),
@@ -148,13 +153,25 @@ bullets <- bullets %>%
       })
   )
 
+# In order to do side-by-side comparisons create new format for hough grooves
+
+bullets <- bullets %>%
+  mutate(
+    grooves_hough = purrr::map(1:nrow(bullets),
+function(x){list(groove = unlist(c(bullets$hough_left[[x]],
+                     bullets$hough_right[[x]])))})
+  )
+
+# Re-order variables for gather
+bullets <- bullets %>%
+  select(-matches("hough_fit")) %>%
+  select(source:ccdata, matches("grooves"), matches(".*_(left|right)"), everything())
 ```
 
 Visualize  the grooves to see the differences in identifications between the different methods:
 
 ```{r, fig.width = 8, fig.height=3.7}
-profilesplus <- bullets %>%
-  tidyr::gather(type_side, location, middle_left:hough_right) %>%
+profilesplus <- bullets %>% tidyr::gather(type_side, location, matches("left|right")) %>%
   tidyr::separate(type_side, into=c("type", "side")) %>%
   tidyr::unnest(ccdata)  # gets rid of all the other list variables 
 
