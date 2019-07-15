@@ -151,7 +151,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
 
     if (length(slope.left) == 0) return(NA) # hough didn't find a groove
     if(is.infinite(slope.left)){
-      left.groove <- bottom.left
+      left.groove <- bottom.left*x3p_get_scale(land.x3p)
     }
 
     else {
@@ -166,7 +166,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
     if (length(slope.right) == 0) return(NA) # hough didn't find a groove
 
     if (is.infinite(slope.right)) {
-      right.groove <- bottom.right
+      right.groove <- bottom.right*x3p_get_scale(land.x3p)
     }
 
     else {
