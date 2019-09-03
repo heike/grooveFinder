@@ -1,6 +1,6 @@
 Package: grooveFinder
 Type: Package
-Title: Identify Locations of Grooves in Land Engraved Areas of Bulet Scans
+Title: Identify Locations of Grooves in Land Engraved Areas of Bullet Scans
 Version: 0.0.1
 Author: Heike Hofmann, Susan Vanderplas, Kiegan Rice, Nathan Garton, Charlotte Roiger
 Authors@R: c(
@@ -27,7 +27,8 @@ Imports:
     x3ptools,
     zoo,
     magrittr,
-    dplyr
+    dplyr,
+    bulletcp
 Remotes: 
     heike/x3ptools,
     nategarton13/bulletcp,
