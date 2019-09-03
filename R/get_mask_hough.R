@@ -21,24 +21,30 @@ get_mask_hough <- function(land.x3p, grooves){
   right <- grooves$right.groove.fit(0:(ncol(land.x3p$surface.matrix)-1)*x3p_get_scale(land.x3p))
   right <- floor(right/x3p_get_scale(land.x3p) + 1)
 
-  if(is.null(land.x3p$mask)){
-    land.x3p <- land.x3p %>%
-      x3p_add_mask()
+  if (is.null(land.x3p$mask)){
+     land.x3p <-  x3p_add_mask(land.x3p)
   }
+  # mask <- land.x3p$mask
 
-  mask <- land.x3p$mask
-  mask <- sapply(1:length(left), FUN = function(i){
-    mask[ i,1:floor(left[i])] <- "#c4221a"
+  # create mask. Masks have transposed size as surface matrix. :(
+  mask <- matrix(data = FALSE,
+                 nrow = ncol(land.x3p$surface.matrix),
+                 ncol = nrow(land.x3p$surface.matrix))
+
+  leftgroove <- sapply(1:length(left), FUN = function(i){
+    mask[ i,1:floor(left[i])] <- TRUE
     mask[i,]
   }) %>%t()
 
-  mask <- sapply(1:length(right), FUN = function(i){
-      mask[i, floor(right[i]):ncol(mask)] <- "#3279a8"
+  land.x3p <- x3p_add_mask_layer(land.x3p, mask = leftgroove, color="#c4221a", annotation = "Left groove")
+
+  rightgroove <- sapply(1:length(right), FUN = function(i){
+      mask[i, floor(right[i]):ncol(mask)] <- TRUE
       mask[i,]
   }) %>% t()
 
-  land.x3p <- land.x3p %>% x3p_add_mask(mask = mask)
-  return(land.x3p)
+  land.x3p <- x3p_add_mask_layer(land.x3p, mask = rightgroove, color="#3279a8", annotation = "Right groove")
 
+  return(land.x3p)
 }
 
