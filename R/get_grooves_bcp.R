@@ -4,6 +4,7 @@
 #' @importFrom bulletcp get_grooves_bcp
 #' @export
 get_grooves_bcp <- function(x, value, adjust = 10, return_plot = FALSE) {
+  land <- NULL # make R CMD CHECK happy
   bcp_out <- bulletcp::get_grooves_bcp(x = x, value = value, adjust = adjust, ...)
   if (return_plot == T) {
     grooves <- list(
