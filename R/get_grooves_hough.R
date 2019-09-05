@@ -48,6 +48,12 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom stats quantile median sd na.omit
 #' @importFrom dplyr filter mutate group_by summarize count
 #' @importFrom x3ptools x3p_get_scale df_to_x3p
+#'
+#' @examples
+#' data("br411", package = "bulletxtrctr")
+#' x3p <- br411
+#' grooves <-get_grooves_hough(x3p_to_df(x3p), qu = 0.995)
+#'
 #' @export
 
 get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){

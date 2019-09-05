@@ -12,7 +12,7 @@
 #'  @examples
 #'
 #' data("br411", package = "bulletxtrctr")
-#' land.x3p <- br411
+#' x3p <- br411
 #' grooves <-get_grooves_hough(x3p_to_df(x3p), qu = 0.995)
 #'
 #' a <- get_mask_hough(x3p, grooves)
