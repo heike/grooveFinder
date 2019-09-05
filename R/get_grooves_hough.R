@@ -32,7 +32,9 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' Use Hough transformation to identify groove locations.
 #'
 #' Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
-#' Pi/4.
+#' Pi/16. Please note that both the input and output of the Hough grooves method treats x and y values as indices on the surface matrix
+#' of the image not as microns.
+#'
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
@@ -47,12 +49,35 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom assertthat has_name
 #' @importFrom stats quantile median sd na.omit
 #' @importFrom dplyr filter mutate group_by summarize count
-#' @importFrom x3ptools x3p_get_scale df_to_x3p
+#' @importFrom x3ptools df_to_x3p x3p_to_df x3p_get_scale
 #'
 #' @examples
 #' data("br411", package = "bulletxtrctr")
 #' x3p <- br411
-#' grooves <-get_grooves_hough(x3p_to_df(x3p), qu = 0.995)
+#'
+#' # Get grooves fit for left and right groove from x3p
+#' grooves <-get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
+#'
+#' # Transform x3p into dataframe for extracting crosscut
+#' ccdata = x3p %>% x3p_to_df()
+#'
+#' # Find optimized crosscut location, this may take some time
+#' crosscut = x3p %>% x3p_crosscut_optimize()
+#'
+#' # Find groove locations for optimized crosscut
+#' left_groove_hough = grooves$left.groove.fit(crosscut)
+#' right_groove_hough = grooves$right.groove.fit(crosscut)
+#'
+#' # Plot profile
+#'
+#' ccdata = ccdata %>% filter(y = crosscut)
+#'
+#' ccdata %>%
+#' ggplot(aes(x = x, y = value))+
+#' geom_line()+
+#' geom_vline(xintercept = left_groove_hough) +
+#' geom_vline(xintercept = right_groove_hough)
+#'
 #'
 #' @export
 
@@ -146,10 +171,10 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
 
   # Calculate equation of line for each side
   slope.left <- -height(strong) / (top.left - bottom.left)
-  yint.left <- (-(slope.left * top.left)) * x3p_get_scale(land.x3p)
+  yint.left <- (-(slope.left * top.left))
 
   slope.right <- -height(strong) / (top.right - bottom.right)
-  yint.right <- (-(slope.right * top.right)) * x3p_get_scale(land.x3p)
+  yint.right <- (-(slope.right * top.right))
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
@@ -157,7 +182,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
 
     if (length(slope.left) == 0) return(NA) # hough didn't find a groove
     if(is.infinite(slope.left)){
-      left.groove <- rep(bottom.left*x3p_get_scale(land.x3p), length(yinput))
+      left.groove <- rep(bottom.left, length(yinput))
     }
 
     else {
@@ -172,7 +197,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
     if (length(slope.right) == 0) return(NA) # hough didn't find a groove
 
     if (is.infinite(slope.right)) {
-      right.groove <- rep(bottom.right*x3p_get_scale(land.x3p), length(yinput))
+      right.groove <- rep(bottom.right, length(yinput))
     }
 
     else {
