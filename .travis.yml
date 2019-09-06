@@ -21,17 +21,11 @@ services:
 
 r_binary_packages:
   - rgl
-  - covr
-  - smoother
-  - assertthat
   - ggplot2
   - MASS
-  - purrr
-  - imager
-  - locfit
-  - zoo
-  - magrittr
   - dplyr
+
+
 
 r_github_packages:
   - nategarton13/bulletcp
