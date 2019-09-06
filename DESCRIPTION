@@ -39,7 +39,7 @@ Suggests:
     here,
     covr,
     testthat,
-    knitr, 
+    knitr,  
     rmarkdown,
     nbtrd
 VignetteBuilder: knitr
