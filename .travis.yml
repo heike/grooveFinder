@@ -25,9 +25,19 @@ r_binary_packages:
 r_packages:
   - covr
   - smoother
+  - assertthat
+  - ggplot2
+  - MASS
+  - purrr
+  - imager
+  - locfit
+  - zoo
+  - magrittr
+  - dplyr
 
 r_github_packages:
   - nategarton13/bulletcp
+  - heike/x3ptools
 
 after_success:
   - Rscript -e 'covr::codecov()'
