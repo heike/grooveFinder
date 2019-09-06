@@ -21,8 +21,6 @@ services:
 
 r_binary_packages:
   - rgl
-
-r_packages:
   - covr
   - smoother
   - assertthat
@@ -38,6 +36,13 @@ r_packages:
 r_github_packages:
   - nategarton13/bulletcp
   - heike/x3ptools
+
+cache:
+  packages: true
+  directories:
+    - /usr/local/lib/R/site-library
+    - /usr/local/texlive
+    - /usr/lib/R
 
 after_success:
   - Rscript -e 'covr::codecov()'
