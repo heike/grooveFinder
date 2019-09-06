@@ -4,6 +4,14 @@ language: R
 cache: packages
 sudo: false
 
+addons:
+  apt:
+    update: true
+    packages:
+      - libglu1-mesa-dev
+      - freeglut3-dev
+      - mesa-common-dev
+
 env_vars:
   global:
     - RGL_USE_NULL=TRUE
