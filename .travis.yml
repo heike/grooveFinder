@@ -21,8 +21,14 @@ services:
 
 r_binary_packages:
   - rgl
+  - covr
+  - assertthat
   - ggplot2
   - MASS
+  - purrr
+  - locfit
+  - zoo
+  - magrittr
   - dplyr
 
 
