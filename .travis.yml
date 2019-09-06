@@ -41,7 +41,6 @@ cache:
   packages: true
   directories:
     - /usr/local/lib/R/site-library
-    - /usr/local/texlive
     - /usr/lib/R
 
 after_success:
