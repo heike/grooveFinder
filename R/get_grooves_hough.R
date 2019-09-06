@@ -52,25 +52,28 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @importFrom x3ptools df_to_x3p x3p_to_df x3p_get_scale
 #'
 #' @examples
-#' data("br411", package = "bulletxtrctr")
+#' library(x3ptools)
+#' library(ggplot2)
+#' data("br411")
 #' x3p <- br411
 #'
 #' # Get grooves fit for left and right groove from x3p
-#' grooves <-get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
+#' grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
 #'
 #' # Transform x3p into dataframe for extracting crosscut
-#' ccdata = x3p %>% x3p_to_df()
+#' ccdata <- x3p %>% x3p_to_df()
 #'
 #' # Find optimized crosscut location, this may take some time
-#' crosscut = x3p %>% x3p_crosscut_optimize()
+#' # crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize() # run if bulletxtrctr is installed
+#' crosscut <- 125
 #'
 #' # Find groove locations for optimized crosscut
-#' left_groove_hough = grooves$left.groove.fit(crosscut)
-#' right_groove_hough = grooves$right.groove.fit(crosscut)
+#' left_groove_hough <- grooves$left.groove.fit(crosscut)
+#' right_groove_hough <- grooves$right.groove.fit(crosscut)
 #'
 #' # Plot profile
 #'
-#' ccdata = ccdata %>% filter(y = crosscut)
+#' ccdata <- ccdata %>% subset(., y == crosscut)
 #'
 #' ccdata %>%
 #' ggplot(aes(x = x, y = value))+

@@ -20,5 +20,38 @@ list object consisting of functions to describe the left and right groove
 }
 \description{
 Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
-Pi/4.
+Pi/16. Please note that both the input and output of the Hough grooves method treats x and y values as indices on the surface matrix
+of the image not as microns.
+}
+\examples{
+library(x3ptools)
+library(ggplot2)
+data("br411")
+x3p <- br411
+
+# Get grooves fit for left and right groove from x3p
+grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
+
+# Transform x3p into dataframe for extracting crosscut
+ccdata <- x3p \%>\% x3p_to_df()
+
+# Find optimized crosscut location, this may take some time
+# crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize() # run if bulletxtrctr is installed
+crosscut <- 125
+
+# Find groove locations for optimized crosscut
+left_groove_hough <- grooves$left.groove.fit(crosscut)
+right_groove_hough <- grooves$right.groove.fit(crosscut)
+
+# Plot profile
+
+ccdata <- ccdata \%>\% subset(., y == crosscut)
+
+ccdata \%>\%
+ggplot(aes(x = x, y = value))+
+geom_line()+
+geom_vline(xintercept = left_groove_hough) +
+geom_vline(xintercept = right_groove_hough)
+
+
 }
