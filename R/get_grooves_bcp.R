@@ -16,5 +16,5 @@ get_grooves_bcp <- function(x, value, adjust = 10, return_plot = FALSE, ...) {
     grooves <- bcp_out
   }
 
-grooves
+  grooves
 }

@@ -16,36 +16,37 @@
 #'
 #' a <- get_mask_hough(x3p, grooves)
 #' \dontrun{x3ptools::image_x3p(a)}
-get_mask_hough <- function(land.x3p, grooves){
-  left <- grooves$left.groove.fit(0:(ncol(land.x3p$surface.matrix)-1)*x3p_get_scale(land.x3p))
-  left <- floor(left/x3p_get_scale(land.x3p) + 1)
-  right <- grooves$right.groove.fit(0:(ncol(land.x3p$surface.matrix)-1)*x3p_get_scale(land.x3p))
-  right <- floor(right/x3p_get_scale(land.x3p) + 1)
+get_mask_hough <- function(land.x3p, grooves) {
+  left <- grooves$left.groove.fit(0:(ncol(land.x3p$surface.matrix) - 1) * x3p_get_scale(land.x3p))
+  left <- floor(left / x3p_get_scale(land.x3p) + 1)
+  right <- grooves$right.groove.fit(0:(ncol(land.x3p$surface.matrix) - 1) * x3p_get_scale(land.x3p))
+  right <- floor(right / x3p_get_scale(land.x3p) + 1)
 
-  if (is.null(land.x3p$mask)){
-     land.x3p <-  x3p_add_mask(land.x3p)
+  if (is.null(land.x3p$mask)) {
+    land.x3p <- x3p_add_mask(land.x3p)
   }
   # mask <- land.x3p$mask
 
   # create mask. Masks have transposed size as surface matrix. :(
-  mask <- matrix(data = FALSE,
-                 nrow = ncol(land.x3p$surface.matrix),
-                 ncol = nrow(land.x3p$surface.matrix))
+  mask <- matrix(
+    data = FALSE,
+    nrow = ncol(land.x3p$surface.matrix),
+    ncol = nrow(land.x3p$surface.matrix)
+  )
 
-  leftgroove <- sapply(1:length(left), FUN = function(i){
-    mask[ i,1:floor(left[i])] <- TRUE
-    mask[i,]
-  }) %>%t()
-
-  land.x3p <- x3ptools::x3p_add_mask_layer(land.x3p, mask = leftgroove, color="#c4221a", annotation = "Left groove")
-
-  rightgroove <- sapply(1:length(right), FUN = function(i){
-      mask[i, floor(right[i]):ncol(mask)] <- TRUE
-      mask[i,]
+  leftgroove <- sapply(1:length(left), FUN = function(i) {
+    mask[ i, 1:floor(left[i])] <- TRUE
+    mask[i, ]
   }) %>% t()
 
-  land.x3p <- x3ptools::x3p_add_mask_layer(land.x3p, mask = rightgroove, color="#3279a8", annotation = "Right groove")
+  land.x3p <- x3ptools::x3p_add_mask_layer(land.x3p, mask = leftgroove, color = "#c4221a", annotation = "Left groove")
+
+  rightgroove <- sapply(1:length(right), FUN = function(i) {
+    mask[i, floor(right[i]):ncol(mask)] <- TRUE
+    mask[i, ]
+  }) %>% t()
+
+  land.x3p <- x3ptools::x3p_add_mask_layer(land.x3p, mask = rightgroove, color = "#3279a8", annotation = "Right groove")
 
   return(land.x3p)
 }
-

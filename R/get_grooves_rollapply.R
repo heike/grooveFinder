@@ -20,7 +20,7 @@
 #' # Set the data up to be read in, cleaned, etc.
 #' library(bulletxtrctr)
 #' library(x3ptools)
-#' 
+#'
 #' example_data <- bullet_pipeline(
 #'   location = list(Bullet1 = c(hamby252demo$bullet1[3])),
 #'   stop_at_step = "crosscut",
@@ -29,7 +29,7 @@
 #'       rotate_x3p(angle = -90) %>%
 #'       y_flip_x3p()
 #' )
-#' 
+#'
 #' get_grooves_rollapply(example_data$ccdata[[1]]$x,
 #'   example_data$ccdata[[1]]$value,
 #'   adjust = 30, return_plot = T

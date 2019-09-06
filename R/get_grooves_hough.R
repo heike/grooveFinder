@@ -84,9 +84,11 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #'
 #' @export
 
-get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
-  assert_that(has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
-              is.numeric(land$x), is.numeric(land$y), is.numeric(land$value))
+get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE) {
+  assert_that(
+    has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
+    is.numeric(land$x), is.numeric(land$y), is.numeric(land$value)
+  )
 
   # Convert to cimage
   land.x3p <- df_to_x3p(land)
@@ -184,7 +186,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
     assert_that(is.numeric(yinput))
 
     if (length(slope.left) == 0) return(NA) # hough didn't find a groove
-    if(is.infinite(slope.left)){
+    if (is.infinite(slope.left)) {
       left.groove <- rep(bottom.left, length(yinput))
     }
 
@@ -215,4 +217,3 @@ get_grooves_hough <- function(land, qu = 0.999, adjust=10, return_plot = FALSE){
 
   return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 }
-
