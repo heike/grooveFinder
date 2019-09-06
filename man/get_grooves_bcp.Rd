@@ -4,7 +4,7 @@
 \alias{get_grooves_bcp}
 \title{Use Bayesian Changepoint Detection to identify groove locations}
 \usage{
-get_grooves_bcp(x, value, adjust = 10, return_plot = FALSE)
+get_grooves_bcp(x, value, adjust = 10, return_plot = FALSE, ...)
 }
 \arguments{
 \item{x}{numeric vector of locations (in microns)}
@@ -14,6 +14,8 @@ get_grooves_bcp(x, value, adjust = 10, return_plot = FALSE)
 \item{adjust}{positive number to adjust the grooves}
 
 \item{return_plot}{return plot of grooves?}
+
+\item{...}{additional arguments to get_grooves_bcp}
 }
 \description{
 Use Bayesian Changepoint Detection to identify groove locations
