@@ -31,15 +31,14 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 
 #' Use Hough transformation to identify groove locations.
 #'
-#' Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
-#' Pi/16. Please note that both the input and output of the Hough grooves method treats x and y values as indices on the surface matrix
-#' of the image not as microns.
+#' Requires access to full x3p of bullet land for computation. Generates Hough lines in polar coordinate form,
+#' and selects lines with angle from the positive x-axis within the range of negative pi/16 to pi/16
 #'
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
 #' @param adjust positive number to adjust the grooves inward
 #' @param return_plot boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE
-#' @return list object consisting of functions to describe the left and right groove
+#' @return list object consisting of functions to describe the left and right groove. Parameters for the functions are given in microns and accept micron inputs.
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -176,10 +175,10 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
 
   # Calculate equation of line for each side
   slope.left <- -height(strong) / (top.left - bottom.left)
-  yint.left <- (-(slope.left * top.left))
+  yint.left <- (-(slope.left * top.left) - 1) *x3p_get_scale(land.x3p)
 
   slope.right <- -height(strong) / (top.right - bottom.right)
-  yint.right <- (-(slope.right * top.right))
+  yint.right <- (-(slope.right * top.right) - 1)*x3p_get_scale(land.x3p)
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
@@ -187,7 +186,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
 
     if (length(slope.left) == 0) return(NA) # hough didn't find a groove
     if (is.infinite(slope.left)) {
-      left.groove <- rep(bottom.left, length(yinput))
+      left.groove <- rep((bottom.left-1)*x3p_get_scale(land.x3p), length(yinput))
     }
 
     else {
@@ -202,7 +201,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     if (length(slope.right) == 0) return(NA) # hough didn't find a groove
 
     if (is.infinite(slope.right)) {
-      right.groove <- rep(bottom.right, length(yinput))
+      right.groove <- rep((bottom.right-1)*x3p_get_scale(land.x3p), length(yinput))
     }
 
     else {
