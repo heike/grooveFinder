@@ -15,7 +15,9 @@
 #' grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
 #'
 #' a <- get_mask_hough(x3p, grooves)
-#' \dontrun{x3ptools::image_x3p(a)}
+#' \dontrun{
+#' x3ptools::image_x3p(a)
+#' }
 get_mask_hough <- function(land.x3p, grooves) {
   left <- grooves$left.groove.fit(0:(ncol(land.x3p$surface.matrix) - 1) * x3p_get_scale(land.x3p))
   left <- floor(left / x3p_get_scale(land.x3p) + 1) # index

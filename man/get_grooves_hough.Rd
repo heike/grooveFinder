@@ -16,12 +16,11 @@ get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = FALSE)
 \item{return_plot}{boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE}
 }
 \value{
-list object consisting of functions to describe the left and right groove
+list object consisting of functions to describe the left and right groove. Parameters for the functions are given in microns and accept micron inputs.
 }
 \description{
-Choose strong edges based on whether scores exceed the 99.75 percentile of scores and if the angle of line is less than
-Pi/16. Please note that both the input and output of the Hough grooves method treats x and y values as indices on the surface matrix
-of the image not as microns.
+Requires access to full x3p of bullet land for computation. Generates Hough lines in polar coordinate form,
+and selects lines with angle from the positive x-axis within the range of negative pi/16 to pi/16
 }
 \examples{
 library(x3ptools)
@@ -32,26 +31,30 @@ x3p <- br411
 # Get grooves fit for left and right groove from x3p
 grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
 
-# Transform x3p into dataframe for extracting crosscut
-ccdata <- x3p \%>\% x3p_to_df()
-
 # Find optimized crosscut location, this may take some time
-# crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize() # run if bulletxtrctr is installed
-crosscut <- 125
+if (require(bulletxtrctr)) {
+  crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
+} else {
+  crosscut <- 125
+}
+
+\dontrun{
+a <- get_mask_hough(x3p, grooves)
+a <- a \%>\% x3p_add_hline(yintercept=crosscut)
+x3ptools::image_x3p(a)
+}
 
 # Find groove locations for optimized crosscut
 left_groove_hough <- grooves$left.groove.fit(crosscut)
 right_groove_hough <- grooves$right.groove.fit(crosscut)
 
 # Plot profile
-
-ccdata <- ccdata \%>\% subset(., y == crosscut)
+ccdata <- x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == crosscut)
 
 ccdata \%>\%
-ggplot(aes(x = x, y = value))+
-geom_line()+
-geom_vline(xintercept = left_groove_hough) +
-geom_vline(xintercept = right_groove_hough)
-
+  ggplot(aes(x = x, y = value))+
+  geom_line()+
+  geom_vline(xintercept = left_groove_hough) +
+  geom_vline(xintercept = right_groove_hough)
 
 }

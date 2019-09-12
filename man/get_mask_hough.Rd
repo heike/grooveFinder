@@ -22,8 +22,10 @@ of the Hough process.
 library(x3ptools)
 data("br411")
 x3p <- br411
-grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.995)
+grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
 
 a <- get_mask_hough(x3p, grooves)
-\dontrun{x3ptools::image_x3p(a)}
+\dontrun{
+x3ptools::image_x3p(a)
+}
 }

@@ -59,30 +59,33 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' # Get grooves fit for left and right groove from x3p
 #' grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
 #'
-#' # Transform x3p into dataframe for extracting crosscut
-#' ccdata <- x3p %>% x3p_to_df()
-#'
 #' # Find optimized crosscut location, this may take some time
-#' # crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize() # run if bulletxtrctr is installed
-#' crosscut <- 125
+#' if (require(bulletxtrctr)) {
+#'   crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize()
+#' } else {
+#'   crosscut <- 125
+#' }
+#'
+#' \dontrun{
+#' a <- get_mask_hough(x3p, grooves)
+#' a <- a %>% x3p_add_hline(yintercept=crosscut)
+#' x3ptools::image_x3p(a)
+#' }
 #'
 #' # Find groove locations for optimized crosscut
 #' left_groove_hough <- grooves$left.groove.fit(crosscut)
 #' right_groove_hough <- grooves$right.groove.fit(crosscut)
 #'
 #' # Plot profile
-#'
-#' ccdata <- ccdata %>% subset(., y == crosscut)
+#' ccdata <- x3p %>% x3p_to_df() %>% dplyr::filter(y == crosscut)
 #'
 #' ccdata %>%
-#' ggplot(aes(x = x, y = value))+
-#' geom_line()+
-#' geom_vline(xintercept = left_groove_hough) +
-#' geom_vline(xintercept = right_groove_hough)
-#'
+#'   ggplot(aes(x = x, y = value))+
+#'   geom_line()+
+#'   geom_vline(xintercept = left_groove_hough) +
+#'   geom_vline(xintercept = right_groove_hough)
 #'
 #' @export
-
 get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE) {
   assert_that(
     has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
