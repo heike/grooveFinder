@@ -7,20 +7,23 @@
 get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = FALSE)
 }
 \arguments{
-\item{land}{dataframe of surface measurements in microns in the x, y, and x direction}
+\item{land}{dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.}
 
-\item{qu}{quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.}
+\item{qu}{quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. Defaults to qu = 0.999
+If groove are not strongly expressed, lower this threshold.}
 
-\item{adjust}{positive number to adjust the grooves inward}
+\item{adjust}{positive number to adjust the grooves inward (currently ignored)}
 
 \item{return_plot}{boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE}
 }
 \value{
-list object consisting of functions to describe the left and right groove. Parameters for the functions are given in microns and accept micron inputs.
+list object consisting of functions to describe the left and right groove.
+Parameters for the functions are given in microns and return results in microns.
 }
 \description{
-Requires access to full x3p of bullet land for computation. Generates Hough lines in polar coordinate form,
-and selects lines with angle from the positive x-axis within the range of negative pi/16 to pi/16
+Hough transformations are used to identify the location of left and right groove.
+Generates Hough lines
+and selects lines with angle corresponding to (close to) vertical lines.
 }
 \examples{
 library(x3ptools)
@@ -29,14 +32,14 @@ data("br411")
 x3p <- br411
 
 # Get grooves fit for left and right groove from x3p
-grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
+grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999, adjust = 0)
 
 # Find optimized crosscut location, this may take some time
-if (require(bulletxtrctr)) {
-  crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
-} else {
+# if (require(bulletxtrctr)) {
+#  crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
+# } else {
   crosscut <- 125
-}
+# }
 
 \dontrun{
 a <- get_mask_hough(x3p, grooves)
@@ -44,9 +47,9 @@ a <- a \%>\% x3p_add_hline(yintercept=crosscut)
 x3ptools::image_x3p(a)
 }
 
-# Find groove locations for optimized crosscut
-left_groove_hough <- grooves$left.groove.fit(crosscut)
-right_groove_hough <- grooves$right.groove.fit(crosscut)
+# Find groove locations for specified crosscut
+grooves$left.groove.fit(crosscut)
+grooves$right.groove.fit(crosscut)
 
 # Plot profile
 ccdata <- x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == crosscut)
@@ -54,7 +57,13 @@ ccdata <- x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == crosscut)
 ccdata \%>\%
   ggplot(aes(x = x, y = value))+
   geom_line()+
-  geom_vline(xintercept = left_groove_hough) +
-  geom_vline(xintercept = right_groove_hough)
+  geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
+  geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 
+# grooves at a different crosscut:
+x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == 150) \%>\%
+  ggplot(aes(x = x, y = value))+
+  geom_line()+
+  geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
+  geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 }

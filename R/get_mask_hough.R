@@ -36,14 +36,14 @@ get_mask_hough <- function(land.x3p, grooves) {
     ncol = nrow(land.x3p$surface.matrix)
   )
 
-  leftgroove <- sapply(1:length(left), FUN = function(i) {
+  leftgroove <- sapply(length(left):1, FUN = function(i) {
     mask[ i, 1:floor(left[i])] <- TRUE
     mask[i, ]
   }) %>% t()
 
   land.x3p <- x3ptools::x3p_add_mask_layer(land.x3p, mask = leftgroove, color = "#c4221a", annotation = "Left groove")
 
-  rightgroove <- sapply(1:length(right), FUN = function(i) {
+  rightgroove <- sapply(length(right):1, FUN = function(i) {
     mask[i, floor(right[i]):ncol(mask)] <- TRUE
     mask[i, ]
   }) %>% t()

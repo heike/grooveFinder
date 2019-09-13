@@ -31,14 +31,17 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 
 #' Use Hough transformation to identify groove locations.
 #'
-#' Requires access to full x3p of bullet land for computation. Generates Hough lines in polar coordinate form,
-#' and selects lines with angle from the positive x-axis within the range of negative pi/16 to pi/16
+#' Hough transformations are used to identify the location of left and right groove.
+#' Generates Hough lines
+#' and selects lines with angle corresponding to (close to) vertical lines.
 #'
-#' @param land dataframe of surface measurements in microns in the x, y, and x direction
-#' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. If groove are not strongly expressed, lower this threshold.
-#' @param adjust positive number to adjust the grooves inward
+#' @param land dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.
+#' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. Defaults to qu = 0.999
+#' If groove are not strongly expressed, lower this threshold.
+#' @param adjust positive number to adjust the grooves inward (currently ignored)
 #' @param return_plot boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE
-#' @return list object consisting of functions to describe the left and right groove. Parameters for the functions are given in microns and accept micron inputs.
+#' @return list object consisting of functions to describe the left and right groove.
+#' Parameters for the functions are given in microns and return results in microns.
 #'
 #' @importFrom x3ptools df_to_x3p
 #' @importFrom imager as.cimg width height
@@ -57,14 +60,14 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' x3p <- br411
 #'
 #' # Get grooves fit for left and right groove from x3p
-#' grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999)
+#' grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999, adjust = 0)
 #'
 #' # Find optimized crosscut location, this may take some time
-#' if (require(bulletxtrctr)) {
-#'   crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize()
-#' } else {
+#' # if (require(bulletxtrctr)) {
+#' #  crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize()
+#' # } else {
 #'   crosscut <- 125
-#' }
+#' # }
 #'
 #' \dontrun{
 #' a <- get_mask_hough(x3p, grooves)
@@ -72,9 +75,9 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' x3ptools::image_x3p(a)
 #' }
 #'
-#' # Find groove locations for optimized crosscut
-#' left_groove_hough <- grooves$left.groove.fit(crosscut)
-#' right_groove_hough <- grooves$right.groove.fit(crosscut)
+#' # Find groove locations for specified crosscut
+#' grooves$left.groove.fit(crosscut)
+#' grooves$right.groove.fit(crosscut)
 #'
 #' # Plot profile
 #' ccdata <- x3p %>% x3p_to_df() %>% dplyr::filter(y == crosscut)
@@ -82,9 +85,15 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' ccdata %>%
 #'   ggplot(aes(x = x, y = value))+
 #'   geom_line()+
-#'   geom_vline(xintercept = left_groove_hough) +
-#'   geom_vline(xintercept = right_groove_hough)
+#'   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
+#'   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 #'
+#' # grooves at a different crosscut:
+#' x3p %>% x3p_to_df() %>% dplyr::filter(y == 150) %>%
+#'   ggplot(aes(x = x, y = value))+
+#'   geom_line()+
+#'   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
+#'   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 #' @export
 get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE) {
   assert_that(
@@ -94,6 +103,12 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
 
   # Convert to cimage
   land.x3p <- df_to_x3p(land)
+
+  # helper function to convert from pixel to microns
+  pix_to_micron <- function(x) {
+    (x-1) * x3p_get_scale(land.x3p)
+  }
+
 
   # visible bindings problem
   theta <- score <- rho <- xintercept <- yintercept <- 0
@@ -116,7 +131,6 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
   # }
 
   # Create image gradient
-
   dx <- imgradient(cimg, "x")
   dy <- imgradient(cimg, "y")
 
@@ -165,50 +179,47 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     )
 
   # Find the middle 2/3rds
-
   lthird <- width(strong) / 6
   uthird <- 5 * width(strong) / 6
 
   # Find best bottom and top index of groove for both sides
-  top.left <- top.left <- segments$xintercept[which.min(abs(segments$xintercept - lthird))]
+  top.left <- segments$xintercept[which.min(abs(segments$xintercept - lthird))]
   bottom.left <- segments$pixset.intercept[which.min(abs(segments$pixset.intercept - lthird))]
+
 
   top.right <- segments$xintercept[which.min(abs(segments$xintercept - uthird))]
   bottom.right <- segments$pixset.intercept[which.min(abs(segments$pixset.intercept - uthird))]
 
   # Calculate equation of line for each side
-  slope.left <- -height(strong) / (top.left - bottom.left)
-  yint.left <- (-(slope.left * top.left) - 1) *x3p_get_scale(land.x3p)
-
-  slope.right <- -height(strong) / (top.right - bottom.right)
-  yint.right <- (-(slope.right * top.right) - 1)*x3p_get_scale(land.x3p)
+  slope.left <-  (top.left-bottom.left)/height(strong)
+  slope.right <- (top.right - bottom.right)/height(strong)
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
     assert_that(is.numeric(yinput))
 
-    if (length(slope.left) == 0) return(NA) # hough didn't find a groove
-    if (is.infinite(slope.left)) {
-      left.groove <- rep((bottom.left-1)*x3p_get_scale(land.x3p), length(yinput))
-    }
+    bottom.micron <- pix_to_micron(bottom.left) # scale bottom.left to microns
 
-    else {
-      # Do I need the scaled +1 to adjust location of the groove?
-      left.groove <- ((yinput - yint.left) / slope.left)
+    if (is.infinite(slope.left)) return(NA) # hough didn't find a groove
+
+    if (length(slope.left) == 0) { # straight vertical line
+      left.groove <- rep(bottom.micron, length(yinput))
+    } else {
+      left.groove <- (bottom.micron + slope.left*yinput)
     }
     return(left.groove)
   }
 
   right_groove_fit <- function(yinput) {
     assert_that(is.numeric(yinput))
-    if (length(slope.right) == 0) return(NA) # hough didn't find a groove
+    bottom.micron <- pix_to_micron(bottom.right) # scale bottom.right to microns
 
-    if (is.infinite(slope.right)) {
-      right.groove <- rep((bottom.right-1)*x3p_get_scale(land.x3p), length(yinput))
-    }
+    if (is.infinite(slope.right)) return(NA) # hough didn't find a groove
 
-    else {
-      right.groove <- ((yinput - yint.right) / slope.right)
+    if (length(slope.right) == 0) { # straight vertical line
+      right.groove <- rep(bottom.micron, length(yinput))
+    } else {
+      right.groove <- (bottom.micron + slope.right*yinput)
     }
     return(right.groove)
   }
