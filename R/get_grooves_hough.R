@@ -167,6 +167,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     has_name(segments, "slope")
   )
 
+  if (nrow(segments) == 0) stop(sprintf("No results found. Try to reduce the quantile qu, currently at %f.", qu))
+
   # browser()
   segments <- segments %>%
     dplyr::mutate(
