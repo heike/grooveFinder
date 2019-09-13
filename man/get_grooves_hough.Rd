@@ -12,7 +12,7 @@ get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = FALSE)
 \item{qu}{quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. Defaults to qu = 0.999
 If groove are not strongly expressed, lower this threshold.}
 
-\item{adjust}{positive number to adjust the grooves inward (currently ignored)}
+\item{adjust}{(generally) positive number in micron used to adjust the grooves inward}
 
 \item{return_plot}{boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE}
 }

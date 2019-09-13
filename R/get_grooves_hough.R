@@ -38,7 +38,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #' @param land dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.
 #' @param qu quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. Defaults to qu = 0.999
 #' If groove are not strongly expressed, lower this threshold.
-#' @param adjust positive number to adjust the grooves inward (currently ignored)
+#' @param adjust (generally) positive number in micron used to adjust the grooves inward
 #' @param return_plot boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE
 #' @return list object consisting of functions to describe the left and right groove.
 #' Parameters for the functions are given in microns and return results in microns.
@@ -203,9 +203,9 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     if (is.infinite(slope.left)) return(NA) # hough didn't find a groove
 
     if (length(slope.left) == 0) { # straight vertical line
-      left.groove <- rep(bottom.micron, length(yinput))
+      left.groove <- rep(bottom.micron, length(yinput)) + adjust
     } else {
-      left.groove <- (bottom.micron + slope.left*yinput)
+      left.groove <- (bottom.micron + slope.left*yinput) + adjust
     }
     return(left.groove)
   }
@@ -217,9 +217,9 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     if (is.infinite(slope.right)) return(NA) # hough didn't find a groove
 
     if (length(slope.right) == 0) { # straight vertical line
-      right.groove <- rep(bottom.micron, length(yinput))
+      right.groove <- rep(bottom.micron, length(yinput)) - adjust
     } else {
-      right.groove <- (bottom.micron + slope.right*yinput)
+      right.groove <- (bottom.micron + slope.right*yinput) - adjust
     }
     return(right.groove)
   }
