@@ -154,7 +154,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
       theta < (pi / 16),
       (rho < abs(width) * 1 / 6 | rho > width * 5 / 6) # at either end of the LEA
     )
-
+  hough.df <- unique(hough.df) # get rid of duplicates
 
   # get x and y intercepts  (in pixel dimensions)
   segments <- rho_to_ab(df = hough.df)
