@@ -14,7 +14,7 @@ rho_to_ab(rho = NULL, theta = NULL, df = NULL)
 \item{df}{Data frame containing output from a Hough transformation}
 }
 \value{
-data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.
+data frame with variables rho, theta, score (original data frame) expanded by yintercept and xintercept.
 }
 \description{
 Helper function, that should not be used outside the package.

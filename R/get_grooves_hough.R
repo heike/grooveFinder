@@ -9,7 +9,7 @@
 #' @param rho Numeric vector containing the shortest distance from the line to the origin
 #' @param theta Numeric vector containing the angle of the line from the positive x axis
 #' @param df Data frame containing output from a Hough transformation
-#' @return data frame with variables rho, theta, score (original data frame) expanded by yintercept, xintercept and slope.
+#' @return data frame with variables rho, theta, score (original data frame) expanded by yintercept and xintercept.
 
 
 rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
@@ -21,7 +21,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
   df <- df %>%
     mutate(
       yintercept = ifelse(theta == 0, NA, rho / sin(theta)),
-      slope = -cos(theta) / sin(theta),
+  #    slope = -cos(theta) / sin(theta), # don't compute slope at this point - it's ambiguous
       xintercept = rho / cos(theta)
     ) # cos(theta) == 0 for theta = ± pi/2 but realistically we don't get there
   df
@@ -119,8 +119,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
   # If they are not, spit out a warning rather than different code.
   # It has bitten us badly into rear elements before to try to think for the user.
   sizes <- dim(land.x3p$surface.matrix)
-  width <- sizes[1]
-  height <- sizes[2]
+  width <- sizes[1] # faster to use than function call to width(strong)
+  height <- sizes[2] # same
   if (width < height) {
     # cimg <- as.cimg(t(land.x3p$surface.matrix))
     warning("This scan seems to not be rotated correctly. Proceed with caution. ")
@@ -152,7 +152,7 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
       score > quantile(score, qu),
       theta > (-pi / 16), # identify only vertical(ish) lines
       theta < (pi / 16),
-      (rho < abs(width(strong)) * 1 / 6 | rho > width(strong) * 5 / 6) # at either end of the LEA
+      (rho < abs(width) * 1 / 6 | rho > width * 5 / 6) # at either end of the LEA
     )
 
 
@@ -163,8 +163,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
     has_name(segments, "rho"),
     has_name(segments, "score"),
     has_name(segments, "xintercept"),
-    has_name(segments, "yintercept"),
-    has_name(segments, "slope")
+    has_name(segments, "yintercept") #,
+  #  has_name(segments, "slope") # don't have a slope any more
   )
 
   if (nrow(segments) == 0) stop(sprintf("No results found. Try to reduce the quantile qu, currently at %f.", qu))
@@ -172,17 +172,17 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
   # browser()
   segments <- segments %>%
     dplyr::mutate(
-      pixset.intercept = ifelse(theta == 0, xintercept, (height(strong) - yintercept) / slope),
+      pixset.intercept = ifelse(theta == 0, xintercept, (height - yintercept) / slope),
       xaverage = ifelse(theta == 0, xintercept,
-        ((0 - yintercept) / slope + (height(strong) - yintercept) / slope) / 2
+        ((0 - yintercept) / slope + (height - yintercept) / slope) / 2
       ),
-      xbottom = ifelse(theta == 0, xintercept, (height(strong) - yintercept) / slope),
+      xbottom = ifelse(theta == 0, xintercept, (height - yintercept) / slope),
       xtop = xintercept
     )
 
   # Find the middle 2/3rds
-  lthird <- width(strong) / 6
-  uthird <- 5 * width(strong) / 6
+  lthird <- width / 6
+  uthird <- 5 * width / 6
 
   # Find best bottom and top index of groove for both sides
   top.left <- segments$xintercept[which.min(abs(segments$xintercept - lthird))]
@@ -193,8 +193,8 @@ get_grooves_hough <- function(land, qu = 0.999, adjust = 10, return_plot = FALSE
   bottom.right <- segments$pixset.intercept[which.min(abs(segments$pixset.intercept - uthird))]
 
   # Calculate equation of line for each side
-  slope.left <-  (top.left-bottom.left)/height(strong)
-  slope.right <- (top.right - bottom.right)/height(strong)
+  slope.left <-  (top.left-bottom.left)/height
+  slope.right <- (top.right - bottom.right)/height
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
