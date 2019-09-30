@@ -4,13 +4,13 @@
 \alias{get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, qu = 0.999, adjust = 10, return_plot = FALSE)
+get_grooves_hough(land, norm.index = 1, adjust = 10,
+  return_plot = FALSE)
 }
 \arguments{
 \item{land}{dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.}
 
-\item{qu}{quantile (between 0 and 1) to specify score quantile for which vertical lines are considered. Defaults to qu = 0.999
-If groove are not strongly expressed, lower this threshold.}
+\item{norm.index}{positive number index to indicate which of the ordered normalized hough scores should be used to estimate the grooves area}
 
 \item{adjust}{(generally) positive number in micron used to adjust the grooves inward}
 
@@ -28,15 +28,16 @@ and selects lines with angle corresponding to (close to) vertical lines.
 \examples{
 library(x3ptools)
 library(ggplot2)
-data("br411")
+
+
 x3p <- br411
 
 # Get grooves fit for left and right groove from x3p
-grooves <- get_grooves_hough(x3p_to_df(x3p), qu = 0.999, adjust = 0)
+grooves <- get_grooves_hough(x3p_to_df(x3p))
 
 # Find optimized crosscut location, this may take some time
 # if (require(bulletxtrctr)) {
-#  crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
+# crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
 # } else {
   crosscut <- 125
 # }
