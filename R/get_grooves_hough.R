@@ -66,7 +66,7 @@ pix_to_micron <- function(x, land) {
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
 #' @importFrom stats quantile median sd na.omit
-#' @importFrom dplyr filter mutate group_by summarize count
+#' @importFrom dplyr filter mutate group_by summarize count arrange
 #' @importFrom x3ptools df_to_x3p x3p_to_df x3p_get_scale
 #'
 #' @examples
@@ -204,10 +204,10 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
 
 
   segments.left <- segments.left %>%
-    arrange(desc(norm.score))
+    dplyr::arrange(desc(norm.score))
 
   segments.right <- segments.right %>%
-    arrange(desc(norm.score))
+    dplyr::arrange(desc(norm.score))
 
   largest.norm.left <- segments.left[norm.index,]
   largest.norm.right <- segments.right[norm.index,]
