@@ -1,0 +1,40 @@
+---
+title: "Groove Identification Using Hough Transforms"
+author: "Charlotte Roiger"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    fig_caption: yes
+    toc: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+Hough transforms are a low-level computer vision algorithm used to detect basic shapes in an image array. The earliest case was for detecting a line in an image, but since then, has expanded to include circles and other such shapes. For bullet processing, the borders of a groove engraved area are often deep linear divets in a bullet land, so Hough transforms are useful for distinguishing between land engraved areas(LEAs) and groove engraved area(GEAs). We will cover the process of using Hough transforms to find GEAs from bullet pre-processing to method comparison. 
+
+# Step One: Bullet Pre-Processing
+
+We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. It's important to note, that unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis rather than a single or averaged crosscut. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. 
+
+```{r warning = F, message= F}
+
+# Load in Libraries
+
+library(ggplot2) # Utilize to visualize cross cuts and bullet lands
+library(dplyr) # Used to transform and cleaning up data
+library(x3ptools) # Contains a host of useful functions for dealing with x3ps
+library(bulletxtrctr) 
+library(grooveFinder) 
+```
+
+
+
+
+```{r}
+
+```
+
