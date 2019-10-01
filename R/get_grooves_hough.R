@@ -177,16 +177,17 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
   #  has_name(segments, "slope") # don't have a slope any more
   )
 
-  if (nrow(segments) == 0) stop(sprintf("No results found. Try to reduce the quantile qu, currently at %f."))
+  if (nrow(segments) == 0) stop(sprintf("No results found."))
 
   # browser()
   segments <- segments %>%
     dplyr::mutate(
-      xbottom = ifelse(theta == 0, xintercept, (rho-height*sin(theta))/cos(theta)),
+      xbottom = xintercept - height*tan(theta),
       xtop = xintercept,
-      norm.score = (score/height)*cos(theta),
+      norm.score = score / (height/cos(theta)),
       slope_y = (xtop - xbottom)/height # Choosing to use slope in y because it is more robust
-    )
+    ) %>%
+    dplyr::arrange(desc(norm.score))
 
   # Find the middle 2/3rds
   lthird <- width / 6
@@ -202,16 +203,8 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     filter(rho > uthird,
            xbottom < width)
 
-
-  segments.left <- segments.left %>%
-    dplyr::arrange(desc(norm.score))
-
-  segments.right <- segments.right %>%
-    dplyr::arrange(desc(norm.score))
-
   largest.norm.left <- segments.left[norm.index,]
   largest.norm.right <- segments.right[norm.index,]
-
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
@@ -219,15 +212,8 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
 
     bottom.micron <- pix_to_micron(largest.norm.left$xbottom, land.x3p) # scale bottom.left to microns
 
-    if (is.infinite(largest.norm.left$slope_y)){
-      left.groove <- rep(pix_to_micron(0, land.x3p), length(yinput)) + adjust
-    } # hough didn't find a groove
+    left.groove <- (bottom.micron + largest.norm.left$slope_y*yinput) + adjust
 
-    if (largest.norm.left$slope_y == 0) { # straight vertical line
-      left.groove <- rep(bottom.micron, length(yinput)) + adjust
-    } else {
-      left.groove <- (bottom.micron + largest.norm.left$slope_y*yinput) + adjust
-    }
     return(left.groove)
   }
 
@@ -236,22 +222,10 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     assert_that(is.numeric(yinput))
     bottom.micron <- pix_to_micron(largest.norm.right$xbottom, land.x3p) # scale bottom.right to microns
 
-    if (is.infinite(largest.norm.right$slope_y)){
-      right.groove <- rep(pix_to_micron(width, land.x3p), length(yinput)) - adjust
-    } # hough didn't find a groove
+    right.groove <- (bottom.micron + largest.norm.right$slope_y*yinput) - adjust
 
-    if (largest.norm.right$slope_y == 0){
-      right.groove <- rep(bottom.micron, length(yinput)) - adjust # vertical line
-
-    } else {
-      right.groove <- (bottom.micron + largest.norm.right$slope_y*yinput) - adjust
-    }
     return(right.groove)
   }
-
-  # summarize the land before visualizing
-  land.summary <- dplyr::summarize(dplyr::group_by(land, x), value = median(value, na.rm = TRUE))
-
 
   return(list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit))
 }
