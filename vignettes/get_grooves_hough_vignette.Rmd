@@ -18,7 +18,7 @@ Hough transforms are a low-level computer vision algorithm used to detect basic 
 
 # Step One: Bullet Pre-Processing
 
-We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. It's important to note, that unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis rather than a single or averaged crosscut. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. 
+We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. It's important to note, that unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis rather than a single or averaged crosscut. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. Note that the usage of the `imager` package requires the installation of `XQuartz` and `ImageMagick`.
 
 ```{r warning = F, message= F}
 
@@ -27,6 +27,7 @@ We will use demo data available in the `grooveFinder` package to demonstrate how
 library(ggplot2) # Utilize to visualize cross cuts and bullet lands
 library(dplyr) # Used to transform and cleaning up data
 library(x3ptools) # Contains a host of useful functions for dealing with x3ps
+library(imager) # Used for converting x3ps to cimgs and running the Hough transform
 library(bulletxtrctr) 
 library(grooveFinder) 
 ```
@@ -50,11 +51,65 @@ b2$land <- 1:6
 bullets <- rbind(b1, b2)
 ```
 
-The measurement of each scan should be in microns, however checking the units as shown below indicates that it is recorded in meters.
+The measurement of each scan should be in microns, however checking the units as shown below indicates that it is recorded in meters. 
 
 ```{r}
+
+# Check units
 bullets$x3p[[1]]$header.info$incrementY
+
+# Convert to microns
+bullets <- bullets %>% mutate(
+  x3p = x3p %>% purrr::map(.f = x3p_m_to_mum)
+)
+
+# Check units once more
+bullets$x3p[[1]]$header.info$incrementY
+
+```
+
+Now that the land is in microns we can view the bullet land using the `image_x3p` functions from `x3ptools`. Notice how the very bottom part of the land has an area that looks fairly smoothe.
+We expect this smoothe area to be at the bottom of the land, so we need to flip
+the image over the x-axis. 
+
+
+```{r, eval=FALSE}
+image_x3p(bullets$x3p[[1]], file = "../man/figures/temp-before.png")
+```
+```{r, echo = FALSE}
+knitr::include_graphics("../man/figures/temp-before.png")
 ```
 
 
+
+```{r}
+# flip scan so that the foot is at the bottom
+
+bullets <- bullets %>% mutate(
+  x3p = x3p %>% purrr::map(.f = function(x) x %>% 
+                             y_flip_x3p())
+)   
+```
+
+```{r, echo = F}
+image_x3p(bullets$x3p[[1]], file = "../man/figures/after-before.png")
+```
+```{r, echo = F}
+knitr::include_graphics("../man/figures/after-before.png")
+```
+
+Not all sets of bullet land data may be flipped in the same way as the data presented in this vignette, so viewing the image and image units should be carried out everytime before analysis.
+
+# Step Two: Application of the Hough Transform
+
+There are essentially three steps wrapped into the `get_grooves_hough` function that are needed to identify GEAs using Hough transforms: creating an image gradient, applying the Hough transform, and selecting the best Hough estimate for the grooves. While all three of these steps are taken care of automatically within the function, a discussion of the full mechanics of the algorithm and the parametrization of the results is necessary for better understanding.
+
+## Step Two A: Image Gradient
+
+Traditionally when using the Hough transform a couple of different image cleaning algorithms are employed to highlight geometric features within the image. Typically images are first run through a Gaussian filter then a process known as Canny Edge detection is employed. The goal of these two processes is to eliminate extraneous image colors or features and to emphasize prominent lines. We have found that neither the Gaussian filter nor the Canny Edge detection process is necessary to identify bullet grooves and in fact increases processing time. 
+
+
+```{r}
+
+```
 
