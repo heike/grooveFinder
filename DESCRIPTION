@@ -31,6 +31,7 @@ Imports:
     bulletcp
 Remotes: 
     heike/x3ptools,
+    heike/bulletxtrctr,
     nategarton13/bulletcp,
     csafe-isu/nbtrd
 URL: https://heike.github.io/grooveFinder/
@@ -41,6 +42,7 @@ Suggests:
     testthat,
     knitr,  
     rmarkdown,
+    bulletxtrctr,
     nbtrd
 VignetteBuilder: knitr
 License: GPL-3
