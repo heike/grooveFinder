@@ -16,7 +16,7 @@ vignette: >
 
 Hough transforms are a low-level computer vision algorithm used to detect basic shapes in an image array. The earliest case was for detecting a line in an image, but since then, has expanded to include circles and other such shapes. For bullet processing, the borders of a groove engraved area are often deep linear divets in a bullet land, so Hough transforms are useful for distinguishing between land engraved areas(LEAs) and groove engraved area(GEAs). We will cover the process of using Hough transforms to find GEAs from bullet pre-processing to method comparison. 
 
-# Step One: Bullet Pre-Processing
+# Bullet Pre-Processing
 
 We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. It's important to note, that unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis rather than a single or averaged crosscut. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. Note that the usage of the `imager` package requires the installation of `XQuartz` and `ImageMagick`.
 
@@ -100,16 +100,132 @@ knitr::include_graphics("../man/figures/after-before.png")
 
 Not all sets of bullet land data may be flipped in the same way as the data presented in this vignette, so viewing the image and image units should be carried out everytime before analysis.
 
-# Step Two: Application of the Hough Transform
+# Application of the Hough Transform
 
 There are essentially three steps wrapped into the `get_grooves_hough` function that are needed to identify GEAs using Hough transforms: creating an image gradient, applying the Hough transform, and selecting the best Hough estimate for the grooves. While all three of these steps are taken care of automatically within the function, a discussion of the full mechanics of the algorithm and the parametrization of the results is necessary for better understanding.
 
-## Step Two A: Image Gradient
+## Image Gradient
 
-Traditionally when using the Hough transform a couple of different image cleaning algorithms are employed to highlight geometric features within the image. Typically images are first run through a Gaussian filter then a process known as Canny Edge detection is employed. The goal of these two processes is to eliminate extraneous image colors or features and to emphasize prominent lines. We have found that neither the Gaussian filter nor the Canny Edge detection process is necessary to identify bullet grooves and in fact increases processing time. 
+Traditionally when using the Hough transform a couple of different image cleaning algorithms are employed to highlight geometric features within the image. Typically images are first run through a Gaussian filter then a process known as Canny Edge detection is employed. The goal of these two processes is to eliminate extraneous image colors or features and to emphasize prominent lines. We have found that neither the Gaussian filter nor the Canny Edge detection process is necessary to identify bullet grooves and in fact increases processing time. To develop these processes we made great use of the [vignettes](https://dahtah.github.io/imager/canny.html) from the `Imager` package by Simon Barthelmé.
 
+
+By electing to use the Hough transform we are choosing to reduce the dimensionality of our data. The x3p presents valuable three dimensional data that we will have to reduce to two dimensions in order to perform image analysis. The image format of choice for the `imager` package is called a c-image, shown below.
 
 ```{r}
+land <- as.cimg(bullets$x3p[[1]]$surface.matrix)
+```
+
+```{r echo = FALSE, eval = FALSE}
+raster <- imager:::as.data.frame.cimg(land)
+ggplot() +
+  geom_raster(data = raster, aes(x = x, y = -y, fill = value)) +
+  coord_fixed() +
+  scale_fill_gradientn(colours=c("#000000","#FFFFFF"))+ 
+  guides(fill = FALSE)
+ggsave(filename = "../man/figures/cimg-land.png", width = 4, height= 3, units = "in", dpi = 175)
 
 ```
 
+```{r, echo = F}
+knitr::include_graphics("../man/figures/cimg-land.png")
+
+```
+
+Now that we have a two dimensional visualization of our bullet land we can create an image gradient, which detects changes in direction, intensity, or color of pixels in our c-image. Then we filter our gradient image by only selecting to pixel gradient values in the top 99.9th percentage. This eliminates some extraneous details from our image in preparation for either the Hough transform or the Canny Edge Detection.
+
+```{r}
+# Create gradient image from the c-image
+dx <- imgradient(land, "x")
+dy <- imgradient(land, "y")
+
+grad.mag <- sqrt(dx^2 + dy^2)
+
+# Filter gradient image so that only the strongest gradients are highlighted
+strong <- grad.mag > quantile(grad.mag, .99, na.rm = TRUE )
+```
+
+To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html). 
+
+```{r}
+
+# Select only the weaker edges in the c-image
+t2 <- quantile(grad.mag, .99, na.rm = TRUE)
+t1 <- quantile(grad.mag, .8, na.rm = TRUE)
+
+weak<- grad.mag %inr% c(t1,t2)
+
+
+# Perform Canny Edge using hysteresis 
+
+expand.strong <- function(ws){
+  overlap <- grow(ws$strong, 3) & ws$weak
+  ws$strong[overlap] <- TRUE
+  ws$weak[overlap <- FALSE]
+  ws 
+}
+
+# Requires fixed points package: devtools::install_github("dahtah/fixedpoints")
+hystFP <- fixedpoints::fp(expand.strong)
+system.time(out <- list(strong = strong, weak = weak) %>% hystFP)
+
+```
+
+So there appears to be an elapsed time of around 25-30 seconds, which isn't much but simply adds to the processing time taken to analyze each bullet land. Below we see two dimensional visualization of the Canny Edge detection and the gradient image threshold.
+
+```{r echo = FALSE, eval = FALSE}
+
+hyst.raster <- imager:::as.data.frame.cimg(out$strong)
+
+ggplot() +
+  geom_raster(data = hyst.raster, aes(x = x, y = -y, fill = value)) +
+  scale_fill_manual(values = c("black", "white", "grey"))+
+  coord_fixed() +
+  labs(title = "Canny-edge Detection of Bullet Land")+
+  guides(fill = FALSE)
+
+ggsave(filename = "../man/figures/canny-land.png", width = 4, height= 3, units = "in", dpi = 175)
+
+strong.raster <- imager:::as.data.frame.cimg(strong)
+ggplot() +
+  geom_raster(data = strong.raster, aes(x = x, y = -y, fill = value)) +
+  scale_fill_manual(values = c("black", "white", "grey"))+
+  coord_fixed() +
+  labs(title = "Strength-thresholded Bullet Land") +
+  guides(fill = FALSE)
+
+ggsave(filename = "../man/figures/strong-threshold.png", width = 4, height= 3, units = "in", dpi = 175)
+
+```
+
+```{r, echo = F}
+knitr::include_graphics("../man/figures/canny-land.png")
+knitr::include_graphics("../man/figures/strong-threshold.png")
+
+```
+
+
+Notice how in the Canny-Edge detection image, the Canny edge picks up a couple strong striae. We do not want the Hough transform to mistake these strong striae for viable borders of the groove engraved areas and so the strength thresholding pre-processing method was selected to minimize this risk and slightly improve processing time.
+
+## Applying Hough Transform
+
+Once pre-processing has been completed, we can now implement the Hough transform process using the `hough_lines` function from `imager`. Because we are working in images that start at the origin we need to shift the hough transform results and return a dataframe for line selection processes. 
+
+```{r}
+# We want to get values with respect to (0,0) not (1,1)
+ hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) 
+```
+
+Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of the gradient image we've created labeled "strong". For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughtly how many pixels in our image fall on the detected lines. 
+
+A note about the feature space, since the slope of vertical lines in the x,y-plane is infinite the amount of memory required to store results in the feature space would make this algorithm unfeasible. So to manage with this problem, the Hough transform characterizes line in Hessian Normal form, meaning each line is described by a $\rho$ and a $\theta$ where $\rho$ is an orthogonal vector from the origin to a point on a detected line, and $\theta$ is the angle between the orthogonal vector and the postivie x-axis. 
+
+```{r, echo = F}
+knitr::include_graphics("../man/figures/hessian-example.png", dpi = 300)
+```
+
+
+These results are useful but in order to use the Hough transform we need to decide how to transform the $\rho$ and $\theta$ parameters back into the x,y-plane. We note that the link between these two parametrizations of lines is given by the following formula:
+
+$$\rho = x\cos(\theta) + y\sin(\theta)$$
+
+When $\theta$ is zero, we can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. When $\theta$ is not zero, we can find the y-intercept by finding $\frac{\rho}{sin(\theta)}$. 
