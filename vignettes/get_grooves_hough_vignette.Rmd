@@ -30,6 +30,7 @@ library(x3ptools) # Contains a host of useful functions for dealing with x3ps
 library(imager) # Used for converting x3ps to cimgs and running the Hough transform
 library(bulletxtrctr) 
 library(grooveFinder) 
+#library(fixedpoints) this package is used to run Canny Edge detection
 ```
 
 The data we will be working with is from the Hamby 44 dataset from the NIST Research Ballistics Toolmarks data base (NRBTD)[https://tsapps.nist.gov/NRBTD/Studies/Search] These are commands loading the bullet scans into `R` without downloading the actual files.
@@ -146,7 +147,7 @@ strong <- grad.mag > quantile(grad.mag, .99, na.rm = TRUE )
 
 To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html). 
 
-```{r}
+```{r eval = F}
 
 # Select only the weaker edges in the c-image
 t2 <- quantile(grad.mag, .99, na.rm = TRUE)
