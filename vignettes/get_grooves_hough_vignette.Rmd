@@ -225,8 +225,71 @@ knitr::include_graphics("../man/figures/hessian-example.png", dpi = 300)
 ```
 
 
-These results are useful but in order to use the Hough transform we need to decide how to transform the $\rho$ and $\theta$ parameters back into the x,y-plane. We note that the link between these two parametrizations of lines is given by the following formula:
+These results are useful but in order to use the Hough transform we need to decide how to transform the $\rho$ and $\theta$ parameters back into the x,y-plane. We note that a link between these two parametrizations of lines is given by the following formula for the x and y intercepts:
 
-$$\rho = x\cos(\theta) + y\sin(\theta)$$
+$$\rho = x_o\cos(\theta) + y_o\sin(\theta)$$
 
-When $\theta$ is zero, we can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. When $\theta$ is not zero, we can find the y-intercept by finding $\frac{\rho}{sin(\theta)}$. 
+Where $x_o$ is the x intercept and $y_o$ is the y-intercept. When $\theta$ is zero, we can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. This is accomplished in a helper function called `rho_to_ab` which is not exported as part of the `groovFinder` package. We utilize this helper function to then find the points of each hough line where the Hough line intersects the top and bottom of each land. 
+
+```{r eval = FALSE}
+
+segments <-  segments <- grooveFinder:::rho_to_ab(df = hough.df)
+
+```
+
+
+```{r, echo = FALSE, eval = FALSE}
+library(cowplot)
+p <- ggplot() +
+  geom_segment(aes(x = 174, y = 0, xend = 400, yend = - 100))
+
+ggdraw() +
+  draw_image("../man/figures/after-before.png", scale = 0.8) +
+  draw_plot(p)
+  
+```
+
+The top of the land, designated "xtop" in our code is simply the x-intercept calculated by `rho_to_ab`. The bottom of the land, designated "xbottom" is found geometrically. As shown in the figure below, we can draw a triangular shape between "xtop" the bottom of the bullet land and our supposed lower x-intercept for a Hough estimate. Given that we know the angle $\theta$ we can then find the location of "xbottom": $\text{xtop} - (\text{height of the land}) * tan(\theta)$ is the height of the land multiplied by tangent of the angle theta subtracted from "xtop. 
+
+INSERT IMAGE HERE FOR CALCULATING XBOTTOM
+
+We then find the slope in y of each Hough line by dividing the difference in x between "xtop" and "xbottom" by the height of the bullet land. We utilize the slope in y rather than the slope in x because i
+
+```{r, eval = F}
+segments <- segments %>%
+    dplyr::mutate(
+      xbottom = xintercept - height*tan(theta),
+      xtop = xintercept,
+      norm.score = score / (height/cos(theta)),
+      slope_y = (xtop - xbottom)/height # Choosing to use slope in y because it is more robust
+    ) %>%
+    dplyr::arrange(desc(norm.score))
+```
+
+INSERT IMAGE HERE FOR CALCULATING THE NORMALIZED SCORE
+
+As previously discussed, the Hough transform outputs a score that can be interpreted as the number of points detected for a particular line detected in the image. Theoretically the strongest line detected in the image should be the groove locations. However, score alone is not a good enough metric to choose groove locations, we need to first normalize the score of each Hough line by dividing the score by the largest possible number of points detected in the line. We take into consideration only lines that intersect both the top and bottom of the land, and find that the largest possible score for each Hough estimate would be: $\text{Height of the bullet land}/cos(\theta)$. So we divide each observed Hough score by the maximum score possible for lines at that angle. To select each groove we first select only Hough estimates below the lower one-sixth of the bullet land and grooves above the upper five-sixth of the land. 
+
+```{r eval = FALSE}
+ # Find the middle 2/3rds
+  lthird <- width / 6
+  uthird <- 5 * width / 6
+
+  # separate into left and right sides and only take into account bullet lands that intersect with the image bottom
+
+  segments.left <- segments %>%
+    filter(rho < lthird,
+           xbottom > 0)
+
+  segments.right <- segments %>%
+    filter(rho > uthird,
+           xbottom < width)
+  
+  # select largest normalized score parametrization
+  largest.norm.left <- segments.left[norm.index,]
+  largest.norm.right <- segments.right[norm.index,]
+
+```
+
+
+These scores are then arranged in descending order and the line with the highest normalized Hough score is selected to by our estimated groove location. Once these particular lines are selected, we need to reformat our estimates into functions so they can be applied to particulr crosscuts or used to create a three-dimensional visualization
