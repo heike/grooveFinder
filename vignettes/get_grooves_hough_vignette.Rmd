@@ -114,6 +114,12 @@ By electing to use the Hough transform we are choosing to reduce the dimensional
 
 ```{r}
 land <- as.cimg(bullets$x3p[[1]]$surface.matrix)
+
+
+# Save dimension size of the bullet land for use later
+sizes <- dim(land)
+  width <- sizes[1] 
+  height <- sizes[2] 
 ```
 
 ```{r echo = FALSE, eval = FALSE}
@@ -209,11 +215,22 @@ Notice how in the Canny-Edge detection image, the Canny edge picks up a couple s
 
 ## Applying Hough Transform
 
-Once pre-processing has been completed, we can now implement the Hough transform process using the `hough_lines` function from `imager`. Because we are working in images that start at the origin we need to shift the hough transform results and return a dataframe for line selection processes. 
+Once pre-processing has been completed, we can now implement the Hough transform process using the `hough_lines` function from `imager`. Because we are working in images that start at the origin we need to shift the hough transform results and return a dataframe for line selection processes. We then transform the $theta$ values to be between 
 
 ```{r}
 # We want to get values with respect to (0,0) not (1,1)
  hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) 
+
+
+# Filter so that only vertical-ish lines are selected for communication
+hough.df <- hough.df %>%
+    dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2 * pi)) %>%
+    dplyr::filter(
+      theta > (-pi / 16), # identify only vertical(ish) lines
+      theta < (pi / 16)
+    )
+  hough.df <- unique(hough.df) # get rid of duplicates
+
 ```
 
 Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of the gradient image we've created labeled "strong". For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughtly how many pixels in our image fall on the detected lines. 
@@ -229,33 +246,85 @@ These results are useful but in order to use the Hough transform we need to deci
 
 $$\rho = x_o\cos(\theta) + y_o\sin(\theta)$$
 
-Where $x_o$ is the x intercept and $y_o$ is the y-intercept. When $\theta$ is zero, we can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. This is accomplished in a helper function called `rho_to_ab` which is not exported as part of the `groovFinder` package. We utilize this helper function to then find the points of each hough line where the Hough line intersects the top and bottom of each land. 
+Where $x_o$ is the x intercept and $y_o$ is the y-intercept. We can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. This is accomplished in a helper function called `rho_to_ab` which is not exported as part of the `groovFinder` package. We utilize this helper function to then find the points of each hough line where the Hough line intersects the top and bottom of each land. 
 
-```{r eval = FALSE}
+```{r}
 
-segments <-  segments <- grooveFinder:::rho_to_ab(df = hough.df)
+segments <- grooveFinder:::rho_to_ab(df = hough.df)
 
 ```
 
 
 ```{r, echo = FALSE, eval = FALSE}
 library(cowplot)
+library(grid)
+library(png)
 p <- ggplot() +
-  geom_segment(aes(x = 174, y = 0, xend = 400, yend = - 100))
+  geom_segment(aes(x =440, y = 0, xend = 60, yend = 300), lwd= 2, colour = "orange") +
+  geom_segment(aes(x =0, y = 0, xend = 310, yend = 100), lwd= 2, colour = "deepskyblue1") +
+  geom_curve(aes(x = 100, y = 0, xend = 50, yend = 19), lwd = 1, colour = "deepskyblue1", curvature = -0.7) + 
+  geom_segment(aes(x = 260, y=82, xend = 290, yend = 63), lwd = 2, colour = "deepskyblue1") +
+  geom_segment(aes(x = 335, y = 76, xend = 290, yend = 63), lwd = 2, colour = "deepskyblue1") +
+  annotate('text', x = 150, y = 20, 
+        label = "theta",parse = TRUE,size=6, colour = "#e6e0ff") +
+    annotate('text', x = 150, y = 80, 
+        label = "rho", parse = TRUE, size=6, colour = "#e6e0ff") +
+  scale_y_reverse() +
+  scale_x_continuous(limits = c(0, 1200), position = "top")
+
 
 ggdraw() +
-  draw_image("../man/figures/after-before.png", scale = 0.8) +
+  draw_image("../man/figures/after-before.png", x = 0.05, y = 0, height = 1.25, width = 1) +
   draw_plot(p)
+
   
+
+
 ```
 
-The top of the land, designated "xtop" in our code is simply the x-intercept calculated by `rho_to_ab`. The bottom of the land, designated "xbottom" is found geometrically. As shown in the figure below, we can draw a triangular shape between "xtop" the bottom of the bullet land and our supposed lower x-intercept for a Hough estimate. Given that we know the angle $\theta$ we can then find the location of "xbottom": $\text{xtop} - (\text{height of the land}) * tan(\theta)$ is the height of the land multiplied by tangent of the angle theta subtracted from "xtop. 
+The top of the land, designated "xtop" in our code is simply the x-intercept calculated by `rho_to_ab`. The bottom of the land, designated "xbottom" is found geometrically. As shown in the figure below, we can draw a triangular shape between "xtop" the bottom of the bullet land and our supposed lower x-intercept for a Hough estimate. Given that we know the angle $\theta$ we can then find the location of "xbottom" by estimating $\delta$ shown in the image below and subtracting $\delta$, from the x-intercept called "xtop". We can find $\delta$ by using some geometric properties and the following equation: $(\text{height of the land}) * tan(\theta)$
 
-INSERT IMAGE HERE FOR CALCULATING XBOTTOM
 
-We then find the slope in y of each Hough line by dividing the difference in x between "xtop" and "xbottom" by the height of the bullet land. We utilize the slope in y rather than the slope in x because i
+```{r, echo = FALSE, eval = FALSE}
+library(cowplot)
+p <- ggplot() +
+  geom_segment(aes(x =440, y = 0, xend = 60, yend = 300), lwd= 2, colour = "orange") +
+  geom_segment(aes(x = 440, y = 0, xend = 440, yend = 163), lwd =2, colour = "orange")+
+  geom_segment(aes(x = 440, y = 135, xend = 380, yend = 135), lwd = 2, colour = "orange") +
+  geom_segment(aes(x = 385, y = 135, xend = 385, yend = 163), lwd = 2, colour = "orange") + 
+  geom_curve(aes(x = 398, y = 30, xend = 440, yend = 40), lwd = 1, colour = "orange") +
+  geom_segment(aes(x =0, y = 0, xend = 310, yend = 100), lwd= 2, colour = "deepskyblue1") +
+  geom_curve(aes(x = 100, y = 0, xend = 50, yend = 19), lwd = 1, colour = "deepskyblue1", curvature = -0.7) + 
+  geom_segment(aes(x = 260, y=82, xend = 290, yend = 63), lwd = 2, colour = "deepskyblue1") +
+  geom_segment(aes(x = 335, y = 76, xend = 290, yend = 63), lwd = 2, colour = "deepskyblue1") +
+  geom_segment(aes(x = 245, y = 162, xend = 448, yend = 162), lwd = 2, colour = "magenta3")+
+  annotate('text', x = 350, y = 190,
+           label = "delta", parse = TRUE, size = 6, colour = "#000000")+
+  annotate('text', x = 170, y = 20, 
+        label = "theta",parse = TRUE,size=6, colour = "#e6e0ff") +
+  annotate('text', x = 150, y = 80, 
+        label = "rho", parse = TRUE, size=6, colour = "#e6e0ff") +
+  annotate('text', x = 405, y = 65, 
+        label = "theta", parse = TRUE, size=6, colour = "#e6e0ff") +
+  scale_y_reverse() +
+  scale_x_continuous(limits = c(0, 1200), position = "top")
 
-```{r, eval = F}
+
+ggdraw() +
+  draw_image("../man/figures/after-before.png", x = 0.05, y = 0, height = 1.2, width = 1) +
+  draw_plot(p)
+
+ggsave(filename = "../man/figures/calc-xbottom.png", width = 6, height = 3.5, units = "in")
+```
+
+```{r, echo = F}
+knitr::include_graphics("../man/figures/calc-xbottom.png", dpi = 300)
+```
+
+
+We then find the slope in y of each Hough line by dividing the difference in x between "xtop" and "xbottom" by the height of the bullet land. We utilize the slope in y rather than the slope in x because it is numerically more robust. 
+
+```{r}
 segments <- segments %>%
     dplyr::mutate(
       xbottom = xintercept - height*tan(theta),
@@ -266,11 +335,12 @@ segments <- segments %>%
     dplyr::arrange(desc(norm.score))
 ```
 
-INSERT IMAGE HERE FOR CALCULATING THE NORMALIZED SCORE
+
+## Selecting the best Hough Line
 
 As previously discussed, the Hough transform outputs a score that can be interpreted as the number of points detected for a particular line detected in the image. Theoretically the strongest line detected in the image should be the groove locations. However, score alone is not a good enough metric to choose groove locations, we need to first normalize the score of each Hough line by dividing the score by the largest possible number of points detected in the line. We take into consideration only lines that intersect both the top and bottom of the land, and find that the largest possible score for each Hough estimate would be: $\text{Height of the bullet land}/cos(\theta)$. So we divide each observed Hough score by the maximum score possible for lines at that angle. To select each groove we first select only Hough estimates below the lower one-sixth of the bullet land and grooves above the upper five-sixth of the land. 
 
-```{r eval = FALSE}
+```{r}
  # Find the middle 2/3rds
   lthird <- width / 6
   uthird <- 5 * width / 6
@@ -286,10 +356,197 @@ As previously discussed, the Hough transform outputs a score that can be interpr
            xbottom < width)
   
   # select largest normalized score parametrization
-  largest.norm.left <- segments.left[norm.index,]
-  largest.norm.right <- segments.right[norm.index,]
+  largest.norm.left <- segments.left[1,]
+  largest.norm.right <- segments.right[1,]
 
 ```
 
 
-These scores are then arranged in descending order and the line with the highest normalized Hough score is selected to by our estimated groove location. Once these particular lines are selected, we need to reformat our estimates into functions so they can be applied to particulr crosscuts or used to create a three-dimensional visualization
+These scores are then arranged in descending order and the line with the highest normalized Hough score is selected to by our estimated groove location. Once these particular lines are selected, we need to reformat our estimates into functions so they can be applied to particular crosscuts or used to create a three-dimensional visualization. We note here that up until this point we have been working with our image data in terms of indices of the surface matrix as part of the x3p file. However, in order to produce the correct estimate for a bullet land crosscut, we need to transform our units from indices to microns. We do this by utilizing the helper function `pix_to_micron` using the following short equation:
+$$ \text{micron} = \text{index} -1 \ * \ \text{x3p_get_scale(x3p)}$$
+where the function `x3p_get_scale` from the bulletxtrctr package obtains the resolution of the x3p-scan. Since we have decided to use slopes in y we then calculate the equation of the line to describe the two sides of our bullet grooves we use "xbottom" (the point of lower x-intercept of Hough line) and then add the slope of the line with the largest normalized score multiplied by the y-input and subtract the user-specified adjustment. 
+
+$$ \text{Estimated Groove Location = (pix_to_micron(xbottom) +  slope*y-input) - adjust}$$
+We create individual functions for the left groove and the right groove and save the resulting sets of functions. If no groove is detected, `get_grooves_hough` should output a vertical line at the very edge of the land. 
+
+```{r}
+ # Crate two functions to calculate the x output for each y input
+  left_groove_fit <- function(yinput) {
+    assert_that(is.numeric(yinput))
+
+    bottom.micron <- pix_to_micron(largest.norm.left$xbottom, land.x3p) # scale bottom.left to microns
+
+    left.groove <- (bottom.micron + largest.norm.left$slope_y*yinput) + adjust
+
+    return(left.groove)
+  }
+
+
+  right_groove_fit <- function(yinput) {
+    assert_that(is.numeric(yinput))
+    bottom.micron <- pix_to_micron(largest.norm.right$xbottom, land.x3p) # scale bottom.right to microns
+
+    right.groove <- (bottom.micron + largest.norm.right$slope_y*yinput) - adjust
+
+    return(right.groove)
+  }
+
+  grooves <- list(left.groove.fit = left_groove_fit, right.groove.fit = right_groove_fit)
+
+```
+
+
+# Results
+
+Now that we have gone through every step of the process of obtaining Hough estimates we can apply our Hough grooves function over the entire dataset rather than just one observation with a few lines of code. Note, that in order to use the `get_hough_grooves` we need to transform the x3p into a dataframe. 
+
+```{r}
+
+# Obtain functions for estimating the left and right grooves of each bullet.
+bullets <- bullets %>% mutate(
+  grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
+    purrr::map(.f = get_grooves_hough)
+)
+
+
+```
+
+Now that we have groove estimates, we should try and visualize what they look like and make any adjustments as necessary. For visualization purposes we will look at Hough groove estimates on a single crosscut by applying the `x3p_crosscut_optimize` function from the `bulletxtrctr` package to the x3p of each land. This may take a few seconds to process. Once we obtain the y-location of a suitable crosscut, we then need to obtain additional information to visualize each individual crosscut, we will call this data "ccdata".
+
+```{r}
+bullets <- bullets %>%
+  mutate(
+    crosscut = x3p %>% purrr::map_dbl(.f = x3p_crosscut_optimize),
+    ccdata = purrr::map2(.x = x3p, .y = crosscut, 
+                       .f = x3p_crosscut)
+  )
+
+```
+
+
+The output of the `x3p_crosscut_optimize` function is a numeric value that indicates the vertical location of the ideal crosscut. To generate an actual estimate of the grooves for this crosscut we need to apply our generated left and right functions to each crosscut y-location.
+
+```{r}
+# Find the left and right groove locations for the particular cross cuts
+bullets <- bullets %>%
+  mutate(
+    hough_left = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$left.groove.fit(x)
+      }),
+    hough_right = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$right.groove.fit(x)
+      })
+  )
+```
+
+Now we are ready to visualize our estimates over a single crosscut.
+
+```{r, eval = F}
+
+
+profilesplus <- bullets %>% tidyr::gather(type_side, location, matches("left|right")) %>%
+  tidyr::separate(type_side, into=c("type", "side")) %>%
+  tidyr::unnest(ccdata)  # gets rid of all the other list variables 
+
+
+profilesplus %>% 
+  ggplot(aes(x = x/1000, y = value)) +
+  facet_grid(bullet~land) +
+  geom_line() +
+  geom_vline(aes(xintercept=location/1000, colour=type), size=0.75) +
+  theme_bw() +
+  scale_colour_brewer(palette="Paired") +
+  theme(legend.position = "bottom") +
+  xlab("Relative location (in millimeters)") +
+  ylab("Relative height (in microns)")
+
+
+```
+
+```{r}
+knitr::include_graphics("../man/figures/cc-before-adjust.png", dpi = 300)
+```
+
+Shown above are crosscuts taken from each land in our dataset. The grooves are the spikes on the left or right side of each curve. Ideally we want to identify the point just inside of each groove spike. Looking at these crosscuts, we can see that the estimates appear to be a little either too far to the left or right. For identifying grooves, it's far more problematic to have an estimate just outside of the grooves than just inside of the grooves. So let's re-run our Hough grooves functions, including an adjustment of 70. 
+
+```{r}
+# re-run Hough estimates with a larger adjust
+bullets <- bullets %>% mutate(
+  grooves_hough = x3p %>% purrr::map(.f = x3p_to_df) %>%
+    purrr::map(.f = get_grooves_hough, adjust = 70)
+)
+
+# Find the left and right groove locations for the particular cross cuts
+bullets <- bullets %>%
+  mutate(
+    hough_left = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$left.groove.fit(x)
+      }),
+    hough_right = purrr::map2_dbl(
+      crosscut,
+      grooves_hough, 
+      .f = function(x, y) {
+        y$right.groove.fit(x)
+      })
+  )
+```
+
+```{r, eval = F}
+
+profilesplus <- bullets %>% tidyr::gather(type_side, location, matches("left|right")) %>%
+  tidyr::separate(type_side, into=c("type", "side")) %>%
+  tidyr::unnest(ccdata)  # gets rid of all the other list variables 
+
+
+profilesplus %>% 
+  ggplot(aes(x = x/1000, y = value)) +
+  facet_grid(bullet~land) +
+  geom_line() +
+  geom_vline(aes(xintercept=location/1000, colour=type), size=0.75) +
+  theme_bw() +
+  scale_colour_brewer(palette="Paired") +
+  theme(legend.position = "bottom") +
+  xlab("Relative location (in millimeters)") +
+  ylab("Relative height (in microns)")
+
+```
+
+```{r}
+knitr::include_graphics("../man/figures/cc-after-adjust.png", dpi = 300)
+```
+
+After adjustment we can see a slight improvement in groove estimates with lines placed deeper into each bullet land. However, there are still some lands such as land 1 bullet 1 tht have problematic estimates. We can get a closer look at these bullet estimates by also visualizing this land in three-dimensions by using the `get_mask_hough` function from `grooveFinder`. To use `get_mask_hough` we need to input the x3p of the bullet land we wish to visualize and the groove functions created by `get_grooves_hough`. The ouput of `get_mask_hough` is a new x3p file that includes colorized portions of the bullet land when visualized using the `image_x3p` function from `bulletxtrctr`.
+
+```{r, eval = F}
+
+land1.bullet1 <- bullets$x3p[[1]]
+grooves <- bullets$grooves_hough[[1]]
+
+# Create mask visualization of groove estimates
+new.visualization <- get_mask_hough(land1.bullet1, grooves)
+
+# Only run if bulletxtrctr is loaded
+image_x3p(new.visualization)
+```
+
+```{r, eval = F, echo = F}
+image_x3p(new.visualization, file = "../man/figures/land1-viz.png")
+
+```
+```{r, echo = F}
+knitr::include_graphics("../man/figures/land1-viz.png")
+```
+
+Here we can see the Hough estimates across the entire bullet land. From the three dimensional visualization it is clear that the Hough estimate is not just inaccurate at the particular crosscut visualized earlier in this section, it is problematic across the entire land. 
+
+
+
