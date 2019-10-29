@@ -14,11 +14,11 @@ vignette: >
 ---
 
 
-Hough transforms are a low-level computer vision algorithm used to detect basic shapes in an image array. The earliest case was for detecting a line in an image, but since then, has expanded to include circles and other such shapes. For bullet processing, the borders of a groove engraved area are often deep linear divets in a bullet land, so Hough transforms are useful for distinguishing between land engraved areas(LEAs) and groove engraved area(GEAs). We will cover the process of using Hough transforms to find GEAs from bullet pre-processing to method comparison. 
+Hough transforms are a low-level computer vision algorithm used to detect basic shapes in an image array. The initial Hough transform was developed to detect a line in an image; since then, Hough transforms have been expanded to detect circles, polygons, and other complex shapes. For bullet processing, the borders of a groove engraved area are often deep linear divots in a bullet land, so Hough transforms are useful for distinguishing between land engraved areas (LEAs) and groove engraved areas (GEAs). In this vignette, we discuss the application of Hough transforms to locate GEAs, starting with bullet pre-processing; we also compare the Hough groove detection method to other existing methods for groove detection. 
 
 # Bullet Pre-Processing
 
-We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. It's important to note, that unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis rather than a single or averaged crosscut. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. Note that the usage of the `imager` package requires the installation of `XQuartz` and `ImageMagick`.
+We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. Unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis, rather than the single or averaged crosscut profile used in other methods. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. The Hough grooves method uses the `imager` package under the hood, which requires external libraries `XQuartz` (on mac) and `ImageMagick` (on everything).
 
 ```{r warning = F, message= F}
 
