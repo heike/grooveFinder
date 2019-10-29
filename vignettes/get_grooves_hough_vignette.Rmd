@@ -113,7 +113,9 @@ While all three of these steps are taken care of automatically within the functi
 
 ## Scan to Image Conversion and Preprocessing
 
-By applying the Hough transform (or any other image processing technique) to x3p scan data, we are in effect storing the so-called "two and a half dimensional" data (because we only have the surface of the object, instead of the full object including depth) as an image. Specifically, we use the x and y grid dimensions to define a grid of image pixels and encode the z dimension (e.g. depth) as the pixel intensity. `grooveFinder` makes use of the `imager` package, which stores images in `Cimg` format. 
+By applying the Hough transform (or any other image processing technique) to x3p scan data, we are in effect storing the so-called "two and a half dimensional" data (because we only have the surface of the object, instead of the full object including depth) as an image. Specifically, we use the x and y grid dimensions to define a grid of image pixels and encode the z dimension (e.g. depth) as the pixel intensity. Note that this conversion is distinct from the `image_x3p()` represenation of the scan as an image, as `image_x3p()` projects the scan into a 3D perspective view and adds lighting and surface coloring. Our image representation is much more basic and is numerically identical to the x3p surface matrix (though stored in a different format).
+
+`grooveFinder` makes use of the `imager` package, which stores images in `Cimg` format. 
 
 ```{r convert-to-cimg}
 land <- as.cimg(bullets$x3p[[1]]$surface.matrix)
