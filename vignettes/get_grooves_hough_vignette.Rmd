@@ -20,7 +20,7 @@ Hough transforms are a low-level computer vision algorithm used to detect basic 
 
 We will use demo data available in the `grooveFinder` package to demonstrate how to find grooves using Hough transforms. Unlike other methods available in `grooveFinder`, `get_grooves_hough` requires the entirety of the x3p for analysis, rather than the single or averaged crosscut profile used in other methods. See package `x3ptools` at https://heike.github.io/x3ptools/ for ways to convert different file formats into x3p standard files. The Hough grooves method uses the `imager` package under the hood, which requires external libraries `XQuartz` (on mac) and `ImageMagick` (on everything).
 
-```{r warning = F, message= F}
+```{r libraries, warning = F, message= F}
 
 # Load in Libraries
 
@@ -36,7 +36,7 @@ library(grooveFinder)
 The data we will be working with is from the Hamby 44 dataset from the NIST Research Ballistics Toolmarks data base (NRBTD)[https://tsapps.nist.gov/NRBTD/Studies/Search] These are commands loading the bullet scans into `R` without downloading the actual files.
 
 
-```{r}
+```{r read-bullet}
 # Load in data using weblinks
 b1 <- read_bullet(urllist = hamby44demo[[1]])
 b2 <- read_bullet(urllist = hamby44demo[[2]])
@@ -44,7 +44,7 @@ b2 <- read_bullet(urllist = hamby44demo[[2]])
 
 For ease of use we will combine the data into one dataframe.
 
-```{r}
+```{r bullet-df}
 b1$bullet <- 1
 b2$bullet <- 2
 b1$land <- 1:6
@@ -54,7 +54,7 @@ bullets <- rbind(b1, b2)
 
 The measurement of each scan should be in microns, however checking the units as shown below indicates that it is recorded in meters. 
 
-```{r}
+```{r bullet-units}
 
 # Check units
 bullets$x3p[[1]]$header.info$incrementY
