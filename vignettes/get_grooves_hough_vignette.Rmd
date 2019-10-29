@@ -147,7 +147,7 @@ For more information on the preprocessing techniques used in Hough transformatio
 
 ## Image Gradient
 
-Now that we have a two dimensional visualization of our bullet land, we can create an image gradient, which detects changes in direction, intensity, or color of pixels in our c-image. Then we filter our gradient image by only selecting to pixel gradient values in the top 99.9th percentage. This eliminates some extraneous details from our image in preparation for either the Hough transform or the Canny Edge Detection.
+Now that we have a two dimensional image representation of our bullet land scan, we create an image gradient, which detects changes in direction, intensity, or shading of pixels in our image. Using this gradient, we select only values above the 99th percentile, removing detail from our image in preparation for the Hough transform. XXX Are we still doing this? I thought we got rid of the quantile thresholding. Was that only after the Hough transform? XXX
 
 ```{r img-gradient}
 # Create gradient image from the c-image
@@ -160,71 +160,78 @@ grad.mag <- sqrt(dx^2 + dy^2)
 strong <- grad.mag > quantile(grad.mag, .99, na.rm = TRUE )
 ```
 
-To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html). 
-
-```{r quantiles, eval = F}
-
-# Select only the weaker edges in the c-image
-t2 <- quantile(grad.mag, .99, na.rm = TRUE)
-t1 <- quantile(grad.mag, .8, na.rm = TRUE)
-
-weak<- grad.mag %inr% c(t1,t2)
+XXX If we're not doing Canny Edge detection (as discussed above in the preprocessing stage) then this section needs to go (I've commented it out). It's just confusing - first we say we're not doing Canny Edge detection, then we talk about it. Focus on the application of the Hough transform to the data. XXX
 
 
-# Perform Canny Edge using hysteresis 
+<!-- To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html).  -->
 
-expand.strong <- function(ws){
-  overlap <- grow(ws$strong, 3) & ws$weak
-  ws$strong[overlap] <- TRUE
-  ws$weak[overlap <- FALSE]
-  ws 
-}
+<!-- ```{r quantiles, eval = F} -->
 
-# Requires fixed points package: devtools::install_github("dahtah/fixedpoints")
-hystFP <- fixedpoints::fp(expand.strong)
-system.time(out <- list(strong = strong, weak = weak) %>% hystFP)
+<!-- # Select only the weaker edges in the c-image -->
+<!-- t2 <- quantile(grad.mag, .99, na.rm = TRUE) -->
+<!-- t1 <- quantile(grad.mag, .8, na.rm = TRUE) -->
 
-```
-
-So there appears to be an elapsed time of around 25-30 seconds, which isn't much but simply adds to the processing time taken to analyze each bullet land. Below we see two dimensional visualization of the Canny Edge detection and the gradient image threshold.
-
-```{r echo = FALSE, eval = FALSE}
-
-hyst.raster <- imager:::as.data.frame.cimg(out$strong)
-
-ggplot() +
-  geom_raster(data = hyst.raster, aes(x = x, y = -y, fill = value)) +
-  scale_fill_manual(values = c("black", "white", "grey"))+
-  coord_fixed() +
-  labs(title = "Canny-edge Detection of Bullet Land")+
-  guides(fill = FALSE)
-
-ggsave(filename = "../man/figures/canny-land.png", width = 4, height= 3, units = "in", dpi = 175)
-
-strong.raster <- imager:::as.data.frame.cimg(strong)
-ggplot() +
-  geom_raster(data = strong.raster, aes(x = x, y = -y, fill = value)) +
-  scale_fill_manual(values = c("black", "white", "grey"))+
-  coord_fixed() +
-  labs(title = "Strength-thresholded Bullet Land") +
-  guides(fill = FALSE)
-
-ggsave(filename = "../man/figures/strong-threshold.png", width = 4, height= 3, units = "in", dpi = 175)
-
-```
-
-```{r, echo = F}
-knitr::include_graphics("../man/figures/canny-land.png")
-knitr::include_graphics("../man/figures/strong-threshold.png")
-
-```
+<!-- weak<- grad.mag %inr% c(t1,t2) -->
 
 
-Notice how in the Canny-Edge detection image, the Canny edge picks up a couple strong striae. We do not want the Hough transform to mistake these strong striae for viable borders of the groove engraved areas and so the strength thresholding pre-processing method was selected to minimize this risk and slightly improve processing time.
+<!-- # Perform Canny Edge using hysteresis  -->
+
+<!-- expand.strong <- function(ws){ -->
+<!--   overlap <- grow(ws$strong, 3) & ws$weak -->
+<!--   ws$strong[overlap] <- TRUE -->
+<!--   ws$weak[overlap <- FALSE] -->
+<!--   ws  -->
+<!-- } -->
+
+<!-- # Requires fixed points package: devtools::install_github("dahtah/fixedpoints") -->
+<!-- hystFP <- fixedpoints::fp(expand.strong) -->
+<!-- system.time(out <- list(strong = strong, weak = weak) %>% hystFP) -->
+
+<!-- ``` -->
+
+<!-- So there appears to be an elapsed time of around 25-30 seconds, which isn't much but simply adds to the processing time taken to analyze each bullet land. Below we see two dimensional visualization of the Canny Edge detection and the gradient image threshold. -->
+
+<!-- ```{r echo = FALSE, eval = FALSE} -->
+
+<!-- hyst.raster <- imager:::as.data.frame.cimg(out$strong) -->
+
+<!-- ggplot() + -->
+<!--   geom_raster(data = hyst.raster, aes(x = x, y = -y, fill = value)) + -->
+<!--   scale_fill_manual(values = c("black", "white", "grey"))+ -->
+<!--   coord_fixed() + -->
+<!--   labs(title = "Canny-edge Detection of Bullet Land")+ -->
+<!--   guides(fill = FALSE) -->
+
+<!-- ggsave(filename = "../man/figures/canny-land.png", width = 4, height= 3, units = "in", dpi = 175) -->
+
+<!-- strong.raster <- imager:::as.data.frame.cimg(strong) -->
+<!-- ggplot() + -->
+<!--   geom_raster(data = strong.raster, aes(x = x, y = -y, fill = value)) + -->
+<!--   scale_fill_manual(values = c("black", "white", "grey"))+ -->
+<!--   coord_fixed() + -->
+<!--   labs(title = "Strength-thresholded Bullet Land") + -->
+<!--   guides(fill = FALSE) -->
+
+<!-- ggsave(filename = "../man/figures/strong-threshold.png", width = 4, height= 3, units = "in", dpi = 175) -->
+
+<!-- ``` -->
+
+<!-- ```{r, echo = F} -->
+<!-- knitr::include_graphics("../man/figures/canny-land.png") -->
+<!-- knitr::include_graphics("../man/figures/strong-threshold.png") -->
+
+<!-- ``` -->
+
+
+<!-- Notice how in the Canny-Edge detection image, the Canny edge picks up a couple strong striae. We do not want the Hough transform to mistake these strong striae for viable borders of the groove engraved areas and so the strength thresholding pre-processing method was selected to minimize this risk and slightly improve processing time. -->
+
+## Hough Transform Algorithm
+XXX Move the theoretical Hough explanation into this section XXX
+
 
 ## Applying Hough Transform
 
-Once pre-processing has been completed, we can now implement the Hough transform process using the `hough_lines` function from `imager`. Because we are working in images that start at the origin we need to shift the hough transform results and return a dataframe for line selection processes. We then transform the $theta$ values to be between 
+Using the image gradient calculated during the preprocessing step, we begin the Hough transform process using the `hough_lines` function from `imager`^[Other implementations of Hough transforms in R include XXXX]. XXX Please expand on this - what representation does `Cimg` use (e.g. where is the origin), and what representation do we need for compatibility with `bulletxtrctr` and `x3ptools`? Pictures may be useful... XXX Because we are working in images that start at the origin we need to shift the hough transform results XXX this next bit doesn't seem to be connected to the shift mentioned earlier in the sentence. Try to connect it better by elaborating a bit? XXX and return a dataframe for line selection processes. We then transform the $theta$ values to be between XXX between...? XXX
 
 ```{r}
 # We want to get values with respect to (0,0) not (1,1)
@@ -242,7 +249,9 @@ hough.df <- hough.df %>%
 
 ```
 
-Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of the gradient image we've created labeled "strong". For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughtly how many pixels in our image fall on the detected lines. 
+XXX Move this to the Hough Transform theory section XXX
+
+Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of the gradient image we've created labeled "strong" XXX Let's keep this discussion general, instead of specific to our implementation/use of the algorithm XXX. For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughtly how many pixels in our image fall on the detected lines. 
 
 A note about the feature space, since the slope of vertical lines in the x,y-plane is infinite the amount of memory required to store results in the feature space would make this algorithm unfeasible. So to manage with this problem, the Hough transform characterizes line in Hessian Normal form, meaning each line is described by a $\rho$ and a $\theta$ where $\rho$ is an orthogonal vector from the origin to a point on a detected line, and $\theta$ is the angle between the orthogonal vector and the postivie x-axis. 
 
@@ -344,6 +353,9 @@ segments <- segments %>%
     dplyr::arrange(desc(norm.score))
 ```
 
+XXX End move to the Hough Theory section XXX
+
+XXX Add a specific explanation of Hough's application relative to the bullet land. Any parameterization differences (e.g. where the origin is relative to the image) should probably go in here. XXX
 
 ## Selecting the best Hough Line
 
