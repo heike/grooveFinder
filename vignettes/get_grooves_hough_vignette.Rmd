@@ -69,21 +69,21 @@ bullets$x3p[[1]]$header.info$incrementY
 
 ```
 
-Now that the land is in microns we can view the bullet land using the `image_x3p` functions from `x3ptools`. Notice how the very bottom part of the land has an area that looks fairly smoothe.
-We expect this smoothe area to be at the bottom of the land, so we need to flip
-the image over the x-axis. 
+Now that the land is in microns we can view the bullet land using the `image_x3p` functions from `x3ptools`. Notice how the very bottom part of the land has an area that looks fairly smooth.
+We expect this smooth area to be at the top of the land, so we need to flip
+the image over the x-axis. Supporting this conclusion, there is also a region of missing values at the top right; this region is called "breakoff" and occurs toward the bottom of the bullet (e.g. away from the tip). Thus, the breakoff should be in the bottom right corner of the scan.
 
 
-```{r, eval=FALSE}
+```{r image-x3p-code, eval=FALSE}
 image_x3p(bullets$x3p[[1]], file = "../man/figures/temp-before.png")
 ```
-```{r, echo = FALSE}
+```{r image-x3p-pic, echo = FALSE}
 knitr::include_graphics("../man/figures/temp-before.png")
 ```
 
 
 
-```{r}
+```{r flip-x3p}
 # flip scan so that the foot is at the bottom
 
 bullets <- bullets %>% mutate(
@@ -92,37 +92,39 @@ bullets <- bullets %>% mutate(
 )   
 ```
 
-```{r, echo = F}
+```{r image-x3p-flip-code, echo = F}
 image_x3p(bullets$x3p[[1]], file = "../man/figures/after-before.png")
 ```
-```{r, echo = F}
+```{r image-x3p-flip-pic, echo = F}
 knitr::include_graphics("../man/figures/after-before.png")
 ```
 
-Not all sets of bullet land data may be flipped in the same way as the data presented in this vignette, so viewing the image and image units should be carried out everytime before analysis.
+Not all scans may be oriented or scaled in the same way as the data presented in this vignette, so viewing the image and image units should be carried out before each analysis.
 
 # Application of the Hough Transform
 
-There are essentially three steps wrapped into the `get_grooves_hough` function that are needed to identify GEAs using Hough transforms: creating an image gradient, applying the Hough transform, and selecting the best Hough estimate for the grooves. While all three of these steps are taken care of automatically within the function, a discussion of the full mechanics of the algorithm and the parametrization of the results is necessary for better understanding.
+There are essentially three steps wrapped into the `get_grooves_hough` function that are needed to identify GEAs using Hough transforms: 
 
-## Image Gradient
+1. creating an image gradient, 
+2. applying the Hough transform, and 
+3. selecting the best Hough estimate for the grooves. 
 
-Traditionally when using the Hough transform a couple of different image cleaning algorithms are employed to highlight geometric features within the image. Typically images are first run through a Gaussian filter then a process known as Canny Edge detection is employed. The goal of these two processes is to eliminate extraneous image colors or features and to emphasize prominent lines. We have found that neither the Gaussian filter nor the Canny Edge detection process is necessary to identify bullet grooves and in fact increases processing time. To develop these processes we made great use of the [vignettes](https://dahtah.github.io/imager/canny.html) from the `Imager` package by Simon Barthelmé.
+While all three of these steps are taken care of automatically within the function, it is useful to demonstrate how the algorithm works by exploring each step of the algorithm in more detail. 
 
+## Scan to Image Conversion and Preprocessing
 
-By electing to use the Hough transform we are choosing to reduce the dimensionality of our data. The x3p presents valuable three dimensional data that we will have to reduce to two dimensions in order to perform image analysis. The image format of choice for the `imager` package is called a c-image, shown below.
+By applying the Hough transform (or any other image processing technique) to x3p scan data, we are in effect storing the so-called "two and a half dimensional" data (because we only have the surface of the object, instead of the full object including depth) as an image. Specifically, we use the x and y grid dimensions to define a grid of image pixels and encode the z dimension (e.g. depth) as the pixel intensity. `grooveFinder` makes use of the `imager` package, which stores images in `Cimg` format. 
 
-```{r}
+```{r convert-to-cimg}
 land <- as.cimg(bullets$x3p[[1]]$surface.matrix)
-
 
 # Save dimension size of the bullet land for use later
 sizes <- dim(land)
-  width <- sizes[1] 
-  height <- sizes[2] 
+width <- sizes[1] 
+height <- sizes[2] 
 ```
 
-```{r echo = FALSE, eval = FALSE}
+```{r cimg-land-code, echo = FALSE, eval = FALSE}
 raster <- imager:::as.data.frame.cimg(land)
 ggplot() +
   geom_raster(data = raster, aes(x = x, y = -y, fill = value)) +
@@ -130,17 +132,22 @@ ggplot() +
   scale_fill_gradientn(colours=c("#000000","#FFFFFF"))+ 
   guides(fill = FALSE)
 ggsave(filename = "../man/figures/cimg-land.png", width = 4, height= 3, units = "in", dpi = 175)
-
 ```
 
-```{r, echo = F}
+```{r cimg-land-pic, echo = F}
 knitr::include_graphics("../man/figures/cimg-land.png")
 
 ```
 
-Now that we have a two dimensional visualization of our bullet land we can create an image gradient, which detects changes in direction, intensity, or color of pixels in our c-image. Then we filter our gradient image by only selecting to pixel gradient values in the top 99.9th percentage. This eliminates some extraneous details from our image in preparation for either the Hough transform or the Canny Edge Detection.
+Traditionally image cleaning functions are applied to the image before Hough transformation in order to emphasize subtle geometric features within the image and reduce the effect of noise. Typically images are first run through a Gaussian filter, which smoothes the image out; afterwards, Canny Edge detection is used to identify edges (regions of sharp change or contrast) within the image. The goal of these two processes is to eliminate extraneous features and/or noise, emphasizing only prominent lines. We have found that neither the Gaussian filter nor the Canny Edge detection process is necessary to identify bullet grooves (because there is relatively little random noise and the lines are already very prominent in most scans); thus, these steps have been removed to save processing time. 
 
-```{r}
+For more information on the preprocessing techniques used in Hough transformation, see the (very useful) [vignettes](https://dahtah.github.io/imager/canny.html) from the `imager` package by Simon Barthelmé.
+
+## Image Gradient
+
+Now that we have a two dimensional visualization of our bullet land, we can create an image gradient, which detects changes in direction, intensity, or color of pixels in our c-image. Then we filter our gradient image by only selecting to pixel gradient values in the top 99.9th percentage. This eliminates some extraneous details from our image in preparation for either the Hough transform or the Canny Edge Detection.
+
+```{r img-gradient}
 # Create gradient image from the c-image
 dx <- imgradient(land, "x")
 dy <- imgradient(land, "y")
@@ -153,7 +160,7 @@ strong <- grad.mag > quantile(grad.mag, .99, na.rm = TRUE )
 
 To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html). 
 
-```{r eval = F}
+```{r quantiles, eval = F}
 
 # Select only the weaker edges in the c-image
 t2 <- quantile(grad.mag, .99, na.rm = TRUE)
