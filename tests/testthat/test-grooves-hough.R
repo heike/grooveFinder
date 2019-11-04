@@ -1,5 +1,8 @@
 context("get_grooves_hough")
 
+
+
+
 tmp <- matrix(0, nrow = 40, ncol = 300)
 
 tmp[, c(41, 273)] <- 1
@@ -8,10 +11,20 @@ tmp[,c(43, 271)] <- -1
 tmp_df <- data.frame(y = rep(1:40, times = 300)*.625, x = rep(1:300, each = 40)*.625, value = tmp[1:length(tmp)])
 exnames <- c("left.groove.fit", 'right.groove.fit')
 
+
 # Groove 1 is at 26.875 microns
 # Groove 2 is at 169.375 microns
 
 tmp_x3p <- x3ptools::df_to_x3p(tmp_df)
+
+# Test that both x3p and dfs work in function
+
+expect_silent(grooves <- get_grooves_hough(tmp_df))
+
+expect_silent(grooves <- get_grooves_hough(tmp_x3p))
+
+# test_vec <- c(1,2)
+# expect_error(get_grooves_hough(test_vec), "Land input is neither an x3p or a dataframe with necessary bullet land data.")
 
 tmp2 <- matrix(0, nrow = 40, ncol = 300)
 

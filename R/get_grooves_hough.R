@@ -52,7 +52,7 @@ pix_to_micron <- function(x, land) {
 #' Generates Hough lines
 #' and selects lines with angle corresponding to (close to) vertical lines.
 #'
-#' @param land dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.
+#' @param land Either a dataframe of surface measurements in microns in the x, y, and x direction, or an x3p file. Use `x3p_to_df` to access the data from an x3p scan.
 #' @param norm.index positive number index to indicate which of the ordered normalized hough scores should be used to estimate the grooves area
 #' @param adjust (generally) positive number in micron used to adjust the grooves inward
 #' @param return_plot boolean value - should a plot of the crosscut with the grooves be returned? defaults to FALSE
@@ -112,14 +112,33 @@ pix_to_micron <- function(x, land) {
 #'   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
 #'   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 #' @export
+#'
 get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = FALSE) {
-  assert_that(
-    has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
-    is.numeric(land$x), is.numeric(land$y), is.numeric(land$value), is.numeric(norm.index)
-  )
+  assert_that(is.numeric(norm.index))
 
-  # Convert to cimage
-  land.x3p <- df_to_x3p(land)
+  if(is.data.frame(land)){
+    assert_that(
+      has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
+      is.numeric(land$x), is.numeric(land$y), is.numeric(land$value)
+    )
+    # Convert to x3p
+    land.x3p <- df_to_x3p(land)
+  }
+
+  else{
+    assert_that(has_name(land, "surface.matrix"), has_name(land, "header.info"),
+                has_name(land, "matrix.info"), is.matrix(land$surface.matrix),
+                is.list(land$matrix.info), is.list(land$header.info),
+                is.numeric(land$header.info$incrementX),
+                is.numeric(land$surface.matrix[1,1])
+    )
+    land.x3p <- land
+  }
+
+
+
+
+
 
   # visible bindings problem
   theta <- score <- rho <- xintercept <- yintercept <- 0
