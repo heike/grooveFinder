@@ -126,9 +126,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     )
     # Convert to x3p
     land.x3p <- df_to_x3p(land)
-  }
-
-  else {
+  } else if ("x3p" %in% class(land)) {
     assert_that(
       has_name(land, "surface.matrix"), has_name(land, "header.info"),
       has_name(land, "matrix.info"), is.matrix(land$surface.matrix),
@@ -137,12 +135,9 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
       is.numeric(land$surface.matrix[1, 1])
     )
     land.x3p <- land
+  } else {
+    stop("land should be a data frame or an x3p object")
   }
-
-
-
-
-
 
   # visible bindings problem
   theta <- score <- rho <- xintercept <- yintercept <- 0
@@ -203,6 +198,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
   if (nrow(segments) == 0) stop(sprintf("No results found."))
 
   # browser()
+  xtop <- xbottom <- norm.score <- 0 # cran check issues
   segments <- segments %>%
     dplyr::mutate(
       xbottom = xintercept - height * tan(theta),
@@ -210,7 +206,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
       norm.score = score / (height / cos(theta)),
       slope_y = (xtop - xbottom) / height # Choosing to use slope in y because it is more robust
     ) %>%
-    dplyr::arrange(desc(norm.score))
+    dplyr::arrange(dplyr::desc(norm.score))
 
   # Find the middle 2/3rds
   lthird <- width / 6

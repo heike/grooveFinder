@@ -17,14 +17,6 @@ exnames <- c("left.groove.fit", "right.groove.fit")
 
 tmp_x3p <- x3ptools::df_to_x3p(tmp_df)
 
-# Test that both x3p and dfs work in function
-
-expect_silent(grooves <- get_grooves_hough(tmp_df))
-
-expect_silent(grooves <- get_grooves_hough(tmp_x3p))
-
-# test_vec <- c(1,2)
-# expect_error(get_grooves_hough(test_vec), "Land input is neither an x3p or a dataframe with necessary bullet land data.")
 
 tmp2 <- matrix(0, nrow = 40, ncol = 300)
 
@@ -36,6 +28,7 @@ left.groove.fit <- function(yinput) {
 
   return(left.groove)
 }
+
 right.groove.fit <- function(yinput) {
   bottom.index <- 255 # scale bottom.right to microns
 
@@ -62,7 +55,9 @@ tmp2 <- sapply(length(right):1, FUN = function(i) {
 }) %>% t()
 
 
-tmp2_df <- data.frame(y = rep(1:40, times = 300) * .625, x = rep(1:300, each = 40) * .625, value = tmp2[1:length(tmp2)])
+tmp2_df <- data.frame(y = rep(1:40, times = 300) * .625,
+                      x = rep(1:300, each = 40) * .625,
+                      value = tmp2[1:length(tmp2)])
 tmp2_x3p <- df_to_x3p(tmp2_df)
 
 
@@ -95,4 +90,8 @@ test_that("get_grooves_hough works", {
   expect_gte(grooves$right.groove.fit(40), 166.875 - 11)
   expect_lte(grooves$right.groove.fit(40), 166.875)
   expect_equivalent(names(grooves2), exnames)
+  # Test that both x3p and dfs work in function
+  expect_silent(grooves <- get_grooves_hough(tmp_df))
+  expect_silent(grooves <- get_grooves_hough(tmp_x3p))
+  expect_error(get_grooves_hough(c(1,2)), "land should be a data frame or an x3p object")
 })

@@ -8,7 +8,7 @@ get_grooves_hough(land, norm.index = 1, adjust = 10,
   return_plot = FALSE)
 }
 \arguments{
-\item{land}{dataframe of surface measurements in microns in the x, y, and x direction. Use `x3p_to_df` to access the data from an x3p scan.}
+\item{land}{Either a dataframe of surface measurements in microns in the x, y, and x direction, or an x3p file. Use `x3p_to_df` to access the data from an x3p scan.}
 
 \item{norm.index}{positive number index to indicate which of the ordered normalized hough scores should be used to estimate the grooves area}
 
@@ -39,12 +39,11 @@ grooves <- get_grooves_hough(x3p_to_df(x3p))
 # if (require(bulletxtrctr)) {
 # crosscut <- x3p \%>\% bulletxtrctr::x3p_crosscut_optimize()
 # } else {
-  crosscut <- 125
+crosscut <- 125
 # }
-
 \dontrun{
 a <- get_mask_hough(x3p, grooves)
-a <- a \%>\% x3p_add_hline(yintercept=crosscut)
+a <- a \%>\% x3p_add_hline(yintercept = crosscut)
 x3ptools::image_x3p(a)
 }
 
@@ -53,18 +52,22 @@ grooves$left.groove.fit(crosscut)
 grooves$right.groove.fit(crosscut)
 
 # Plot profile
-ccdata <- x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == crosscut)
+ccdata <- x3p \%>\%
+  x3p_to_df() \%>\%
+  dplyr::filter(y == crosscut)
 
 ccdata \%>\%
-  ggplot(aes(x = x, y = value))+
-  geom_line()+
+  ggplot(aes(x = x, y = value)) +
+  geom_line() +
   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 
 # grooves at a different crosscut:
-x3p \%>\% x3p_to_df() \%>\% dplyr::filter(y == 150) \%>\%
-  ggplot(aes(x = x, y = value))+
-  geom_line()+
+x3p \%>\%
+  x3p_to_df() \%>\%
+  dplyr::filter(y == 150) \%>\%
+  ggplot(aes(x = x, y = value)) +
+  geom_line() +
   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 }
