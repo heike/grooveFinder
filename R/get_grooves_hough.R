@@ -40,7 +40,7 @@ rho_to_ab <- function(rho = NULL, theta = NULL, df = NULL) {
 #'
 pix_to_micron <- function(x, land) {
   assert_that(is.numeric(x))
-  (x-1) * x3p_get_scale(land)
+  (x - 1) * x3p_get_scale(land)
 }
 
 
@@ -83,12 +83,11 @@ pix_to_micron <- function(x, land) {
 #' # if (require(bulletxtrctr)) {
 #' # crosscut <- x3p %>% bulletxtrctr::x3p_crosscut_optimize()
 #' # } else {
-#'   crosscut <- 125
+#' crosscut <- 125
 #' # }
-#'
 #' \dontrun{
 #' a <- get_mask_hough(x3p, grooves)
-#' a <- a %>% x3p_add_hline(yintercept=crosscut)
+#' a <- a %>% x3p_add_hline(yintercept = crosscut)
 #' x3ptools::image_x3p(a)
 #' }
 #'
@@ -97,18 +96,22 @@ pix_to_micron <- function(x, land) {
 #' grooves$right.groove.fit(crosscut)
 #'
 #' # Plot profile
-#' ccdata <- x3p %>% x3p_to_df() %>% dplyr::filter(y == crosscut)
+#' ccdata <- x3p %>%
+#'   x3p_to_df() %>%
+#'   dplyr::filter(y == crosscut)
 #'
 #' ccdata %>%
-#'   ggplot(aes(x = x, y = value))+
-#'   geom_line()+
+#'   ggplot(aes(x = x, y = value)) +
+#'   geom_line() +
 #'   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
 #'   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 #'
 #' # grooves at a different crosscut:
-#' x3p %>% x3p_to_df() %>% dplyr::filter(y == 150) %>%
-#'   ggplot(aes(x = x, y = value))+
-#'   geom_line()+
+#' x3p %>%
+#'   x3p_to_df() %>%
+#'   dplyr::filter(y == 150) %>%
+#'   ggplot(aes(x = x, y = value)) +
+#'   geom_line() +
 #'   geom_vline(xintercept = grooves$left.groove.fit(crosscut), color = "red") +
 #'   geom_vline(xintercept = grooves$right.groove.fit(crosscut), color = "blue")
 #' @export
@@ -116,7 +119,7 @@ pix_to_micron <- function(x, land) {
 get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = FALSE) {
   assert_that(is.numeric(norm.index))
 
-  if(is.data.frame(land)){
+  if (is.data.frame(land)) {
     assert_that(
       has_name(land, "x"), has_name(land, "y"), has_name(land, "value"),
       is.numeric(land$x), is.numeric(land$y), is.numeric(land$value)
@@ -125,12 +128,13 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     land.x3p <- df_to_x3p(land)
   }
 
-  else{
-    assert_that(has_name(land, "surface.matrix"), has_name(land, "header.info"),
-                has_name(land, "matrix.info"), is.matrix(land$surface.matrix),
-                is.list(land$matrix.info), is.list(land$header.info),
-                is.numeric(land$header.info$incrementX),
-                is.numeric(land$surface.matrix[1,1])
+  else {
+    assert_that(
+      has_name(land, "surface.matrix"), has_name(land, "header.info"),
+      has_name(land, "matrix.info"), is.matrix(land$surface.matrix),
+      is.list(land$matrix.info), is.list(land$header.info),
+      is.numeric(land$header.info$incrementX),
+      is.numeric(land$surface.matrix[1, 1])
     )
     land.x3p <- land
   }
@@ -192,8 +196,8 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     has_name(segments, "rho"),
     has_name(segments, "score"),
     has_name(segments, "xintercept"),
-    has_name(segments, "yintercept") #,
-  #  has_name(segments, "slope") # don't have a slope any more
+    has_name(segments, "yintercept") # ,
+    #  has_name(segments, "slope") # don't have a slope any more
   )
 
   if (nrow(segments) == 0) stop(sprintf("No results found."))
@@ -201,10 +205,10 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
   # browser()
   segments <- segments %>%
     dplyr::mutate(
-      xbottom = xintercept - height*tan(theta),
+      xbottom = xintercept - height * tan(theta),
       xtop = xintercept,
-      norm.score = score / (height/cos(theta)),
-      slope_y = (xtop - xbottom)/height # Choosing to use slope in y because it is more robust
+      norm.score = score / (height / cos(theta)),
+      slope_y = (xtop - xbottom) / height # Choosing to use slope in y because it is more robust
     ) %>%
     dplyr::arrange(desc(norm.score))
 
@@ -215,15 +219,19 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
   # separate into left and right sides and only take into account bullet lands that intersect with the image bottom
 
   segments.left <- segments %>%
-    filter(rho < lthird,
-           xbottom > 0)
+    filter(
+      rho < lthird,
+      xbottom > 0
+    )
 
   segments.right <- segments %>%
-    filter(rho > uthird,
-           xbottom < width)
+    filter(
+      rho > uthird,
+      xbottom < width
+    )
 
-  largest.norm.left <- segments.left[norm.index,]
-  largest.norm.right <- segments.right[norm.index,]
+  largest.norm.left <- segments.left[norm.index, ]
+  largest.norm.right <- segments.right[norm.index, ]
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
@@ -231,7 +239,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
 
     bottom.micron <- pix_to_micron(largest.norm.left$xbottom, land.x3p) # scale bottom.left to microns
 
-    left.groove <- (bottom.micron + largest.norm.left$slope_y*yinput) + adjust
+    left.groove <- (bottom.micron + largest.norm.left$slope_y * yinput) + adjust
 
     return(left.groove)
   }
@@ -241,7 +249,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     assert_that(is.numeric(yinput))
     bottom.micron <- pix_to_micron(largest.norm.right$xbottom, land.x3p) # scale bottom.right to microns
 
-    right.groove <- (bottom.micron + largest.norm.right$slope_y*yinput) - adjust
+    right.groove <- (bottom.micron + largest.norm.right$slope_y * yinput) - adjust
 
     return(right.groove)
   }

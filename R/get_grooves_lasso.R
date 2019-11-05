@@ -86,7 +86,7 @@ get_grooves_lasso <- function(x, value, lasso_method = "basic", pred_cutoff = if
 
   if (lasso_method == "basic") {
     X <- cbind(1, model.matrix(
-      ~rlo_resid_std + I(rlo_resid_std^2) + side +
+      ~ rlo_resid_std + I(rlo_resid_std^2) + side +
         depth_std + side * depth_std + xint1_std +
         xint2_std + range_50 + numNA_50 + ind_2mad +
         numpos_50 + ind_edges - 1,
@@ -95,7 +95,7 @@ get_grooves_lasso <- function(x, value, lasso_method = "basic", pred_cutoff = if
     ymean <- X %*% lasso_simple
   } else if (lasso_method == "full") {
     X <- cbind(1, model.matrix(
-      ~(rlo_resid_std + I(rlo_resid_std^2) + side +
+      ~ (rlo_resid_std + I(rlo_resid_std^2) + side +
         depth_std + xint1_std +
         xint2_std + range_50 + numNA_50 + ind_2mad +
         numpos_50 + ind_edges)^2 - 1,

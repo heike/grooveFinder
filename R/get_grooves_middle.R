@@ -44,7 +44,9 @@ get_grooves_middle <- function(x, value, middle = 75, return_plot = F) {
   ns <- land %>% count(x)
   if (max(ns$n) > 1) message(sprintf("summarizing across %d profiles ...", max(ns$n)))
 
-  land <- land %>% group_by(x) %>% summarize(value = mean(value, na.rm = TRUE))
+  land <- land %>%
+    group_by(x) %>%
+    summarize(value = mean(value, na.rm = TRUE))
   groove <- quantile(land$x,
     probs = c((100 - middle) / 200, (100 + middle) / 200)
   )
