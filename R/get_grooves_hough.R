@@ -209,20 +209,20 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     dplyr::arrange(dplyr::desc(norm.score))
 
   # Find the middle 2/3rds
-  lthird <- width / 6
-  uthird <- 5 * width / 6
+  lfourth <- width / 4
+  ufourth <- 3 * width / 4
 
   # separate into left and right sides and only take into account bullet lands that intersect with the image bottom
 
   segments.left <- segments %>%
     filter(
-      rho < lthird,
+      rho < lfourth,
       xbottom > 0
     )
 
   segments.right <- segments %>%
     filter(
-      rho > uthird,
+      rho > ufourth,
       xbottom < width
     )
 
