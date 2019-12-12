@@ -4,10 +4,19 @@
 \alias{get_grooves_rollapply}
 \title{Using rollapply to find grooves in a crosscut}
 \usage{
-get_grooves_rollapply(x, value, smoothfactor = 15, adjust = 10,
-  groove_cutoff = 400, mean_left = NULL, mean_right = NULL,
-  mean_window = 100, second_smooth = T, which_fun = mean,
-  return_plot = F)
+get_grooves_rollapply(
+  x,
+  value,
+  smoothfactor = 15,
+  adjust = 10,
+  groove_cutoff = 400,
+  mean_left = NULL,
+  mean_right = NULL,
+  mean_window = 100,
+  second_smooth = T,
+  which_fun = mean,
+  return_plot = F
+)
 }
 \arguments{
 \item{x}{numeric vector of locations (in microns)}

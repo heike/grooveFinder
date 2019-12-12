@@ -4,9 +4,13 @@
 \alias{get_grooves_lasso}
 \title{Use logistic model to identify groove locations}
 \usage{
-get_grooves_lasso(x, value, lasso_method = "basic",
-  pred_cutoff = ifelse(lasso_method == "basic", 0.07, 0.06),
-  return_plot = F)
+get_grooves_lasso(
+  x,
+  value,
+  lasso_method = "basic",
+  pred_cutoff = ifelse(lasso_method == "basic", 0.3, 0.34),
+  return_plot = F
+)
 }
 \arguments{
 \item{x}{numeric vector of locations (in microns)}
