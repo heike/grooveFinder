@@ -11,7 +11,7 @@
 #' @importFrom assertthat assert_that
 #' @importFrom assertthat has_name
 #' @export
-get_grooves_lasso <- function(x, value, lasso_method = "basic", pred_cutoff = ifelse(lasso_method == "basic", .3, 0.34), return_plot = F) {
+get_grooves_lasso <- function(x, value, lasso_method = "basic", pred_cutoff = ifelse(lasso_method == "basic", 0.3, 0.34), return_plot = F) {
   land <- data.frame(x = x, value = value)
   original_land <- land
 
