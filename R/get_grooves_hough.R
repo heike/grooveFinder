@@ -208,7 +208,7 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
     ) %>%
     dplyr::arrange(dplyr::desc(norm.score))
 
-  # Find the middle 2/3rds
+  # Find the middle 1/2
   lfourth <- width / 4
   ufourth <- 3 * width / 4
 
@@ -216,18 +216,27 @@ get_grooves_hough <- function(land, norm.index = 1, adjust = 10, return_plot = F
 
   segments.left <- segments %>%
     filter(
-      rho < lfourth,
+      rho < width/2,
       xbottom > 0
     )
 
   segments.right <- segments %>%
     filter(
-      rho > ufourth,
+      rho > width/2,
       xbottom < width
     )
 
   largest.norm.left <- segments.left[norm.index, ]
   largest.norm.right <- segments.right[norm.index, ]
+
+  if(largest.norm.left$xbottom > lfourth | largest.norm.left$xtop > lfourth){
+    largest.norm.left <- data.frame(xbottom = lfourth, xtop = lfourth, slope_y = 0)
+  }
+
+  if(largest.norm.right$xbottom < ufourth | largest.norm.right$xtop < ufourth){
+    largest.norm.right <- data.frame(xbottom = ufourth, xtop = ufourth, slope_y = 0)
+  }
+
 
   # Crate two functions to calculate the x output for each y input
   left_groove_fit <- function(yinput) {
