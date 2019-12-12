@@ -92,7 +92,7 @@ bullets <- bullets %>% mutate(
 )   
 ```
 
-```{r image-x3p-flip-code, echo = F}
+```{r image-x3p-flip-code, eval = F, echo = F}
 image_x3p(bullets$x3p[[1]], file = "../man/figures/after-before.png")
 ```
 ```{r image-x3p-flip-pic, echo = F}
@@ -100,6 +100,70 @@ knitr::include_graphics("../man/figures/after-before.png")
 ```
 
 Not all scans may be oriented or scaled in the same way as the data presented in this vignette, so viewing the image and image units should be carried out before each analysis.
+
+
+## Motivating Example
+
+Before we get into the specifics of the `get_grooves_hough` algorithm, we will demonstrate identifying groove locations on a single land in two and three dimensions.
+
+```{r demo-hough-grooves}
+
+# select only one x3p file from demo set
+x3p <- bullets$x3p[[1]]
+
+# obtain the groove functions for land 1
+grooves <- get_grooves_hough(x3p,adjust = 150)
+
+# extract an optimized crosscut of the bullet 
+crosscut <- x3p %>% x3p_crosscut_optimize()
+```
+
+```{r visualize-cc, eval=FALSE}
+
+# groove location at crosscut
+hough.left <- grooves$left.groove.fit(crosscut) 
+
+hough.right <- grooves$right.groove.fit(crosscut)
+
+raster.cc <- imager:::as.data.frame.cimg(land) %>% filter(y == crosscut)
+ggplot() +
+  geom_point(data = raster.cc, aes(x = x, y = value)) +
+  geom_vline(xintercept = hough.left, colour = "blue") +
+  geom_vline(xintercept = hough.right, colour = "red") +
+  guides(fill = FALSE)
+
+
+```
+
+```{r make-cc-motivation, eval=F, echo = F}
+hough.left <- grooves$left.groove.fit(crosscut) 
+
+hough.right <- grooves$right.groove.fit(crosscut)
+
+raster.cc <- imager:::as.data.frame.cimg(as.cimg(x3p$surface.matrix)) %>% filter(y == crosscut)
+ggplot() +
+  geom_point(data = raster.cc, aes(x = x, y = value)) +
+  geom_vline(xintercept = (hough.left+1)/x3p_get_scale(x3p), colour = "blue") +
+  geom_vline(xintercept = (hough.right-1)/x3p_get_scale(x3p), colour = "red") +
+  guides(fill = FALSE)
+ggsave(filename = "../man/figures/cc-motivation.png", width = 4, height= 3, units = "in", dpi = 175)
+```
+
+```{r 2d-cc-viz-motivation, echo = F}
+knitr::include_graphics("../man/figures/cc-motivation.png")
+```
+
+Here we can see a two-dimensional visualization of our groove estimates over a single crosscut of our bullet land. We notice that while the right groove appears to be pretty well identified we have some slight error with the left hand groove. To investigate further we view the three-dimension Hough estimate across the entire land using the `get_mask_hough` function from `grooveFinder`.
+
+```{r 3d-viz-motivation-creation, eval = F}
+new.viz <- get_mask_hough(x3p, grooves)
+image_x3p(new.viz, file = "../man/figures/3d-viz-motivation.png")
+```
+```{r 3d-viz-motivation, echo = F}
+knitr::include_graphics("../man/figures/3d-viz-motivation.png")
+```
+
+
 
 # Application of the Hough Transform
 
@@ -115,7 +179,7 @@ While all three of these steps are taken care of automatically within the functi
 
 By applying the Hough transform (or any other image processing technique) to x3p scan data, we are in effect storing the so-called "two and a half dimensional" data (because we only have the surface of the object, instead of the full object including depth) as an image. Specifically, we use the x and y grid dimensions to define a grid of image pixels and encode the z dimension (e.g. depth) as the pixel intensity. Note that this conversion is distinct from the `image_x3p()` represenation of the scan as an image, as `image_x3p()` projects the scan into a 3D perspective view and adds lighting and surface coloring. Our image representation is much more basic and is numerically identical to the x3p surface matrix (though stored in a different format).
 
-`grooveFinder` makes use of the `imager` package, which stores images in `Cimg` format. 
+`grooveFinder` makes use of the `imager` package, which stores images in `Cimg` format. This is because imager imports a large majority of its processing from the `CImg` C++ library. In C++ a `CImg` is an image class able to represents datasets that have up to four dimensions. Thus, we can save our x3p surface matrix as a `Cimg` for processing. Since we are using `Cimg` it is worth noting that the y-axis is flipped from a traditional cartesian co-ordinate system. So the origin is in actuality in the top left-hand corner.
 
 ```{r convert-to-cimg}
 land <- as.cimg(bullets$x3p[[1]]$surface.matrix)
@@ -147,7 +211,7 @@ For more information on the preprocessing techniques used in Hough transformatio
 
 ## Image Gradient
 
-Now that we have a two dimensional image representation of our bullet land scan, we create an image gradient, which detects changes in direction, intensity, or shading of pixels in our image. Using this gradient, we select only values above the 99th percentile, removing detail from our image in preparation for the Hough transform. XXX Are we still doing this? I thought we got rid of the quantile thresholding. Was that only after the Hough transform? XXX
+Now that we have a two dimensional image representation of our bullet land scan, we create an image gradient, which detects changes in direction, intensity, or shading of pixels in our image. Using this gradient, we select only values above the 99th percentile, removing detail from our image in preparation for the Hough transform. 
 
 ```{r img-gradient}
 # Create gradient image from the c-image
@@ -160,98 +224,12 @@ grad.mag <- sqrt(dx^2 + dy^2)
 strong <- grad.mag > quantile(grad.mag, .99, na.rm = TRUE )
 ```
 
-XXX If we're not doing Canny Edge detection (as discussed above in the preprocessing stage) then this section needs to go (I've commented it out). It's just confusing - first we say we're not doing Canny Edge detection, then we talk about it. Focus on the application of the Hough transform to the data. XXX
+The astute vignette reader may notice that the image class changes from a `Cimg` to a `pixset` after filter the gradient magnitude image. This is because the values in the `Cimg` are passed through a logical test and are thus saved as either TRUE or FALSE in the new image matrix. These matrices of boolean values are a new image class called a `pixset` which we can use to generate Hough estimates.
 
-
-<!-- To carry out Canny Edge detection further processing is needed as outlined in the `Imager` Canny Edge [vignette](https://dahtah.github.io/imager/canny.html).  -->
-
-<!-- ```{r quantiles, eval = F} -->
-
-<!-- # Select only the weaker edges in the c-image -->
-<!-- t2 <- quantile(grad.mag, .99, na.rm = TRUE) -->
-<!-- t1 <- quantile(grad.mag, .8, na.rm = TRUE) -->
-
-<!-- weak<- grad.mag %inr% c(t1,t2) -->
-
-
-<!-- # Perform Canny Edge using hysteresis  -->
-
-<!-- expand.strong <- function(ws){ -->
-<!--   overlap <- grow(ws$strong, 3) & ws$weak -->
-<!--   ws$strong[overlap] <- TRUE -->
-<!--   ws$weak[overlap <- FALSE] -->
-<!--   ws  -->
-<!-- } -->
-
-<!-- # Requires fixed points package: devtools::install_github("dahtah/fixedpoints") -->
-<!-- hystFP <- fixedpoints::fp(expand.strong) -->
-<!-- system.time(out <- list(strong = strong, weak = weak) %>% hystFP) -->
-
-<!-- ``` -->
-
-<!-- So there appears to be an elapsed time of around 25-30 seconds, which isn't much but simply adds to the processing time taken to analyze each bullet land. Below we see two dimensional visualization of the Canny Edge detection and the gradient image threshold. -->
-
-<!-- ```{r echo = FALSE, eval = FALSE} -->
-
-<!-- hyst.raster <- imager:::as.data.frame.cimg(out$strong) -->
-
-<!-- ggplot() + -->
-<!--   geom_raster(data = hyst.raster, aes(x = x, y = -y, fill = value)) + -->
-<!--   scale_fill_manual(values = c("black", "white", "grey"))+ -->
-<!--   coord_fixed() + -->
-<!--   labs(title = "Canny-edge Detection of Bullet Land")+ -->
-<!--   guides(fill = FALSE) -->
-
-<!-- ggsave(filename = "../man/figures/canny-land.png", width = 4, height= 3, units = "in", dpi = 175) -->
-
-<!-- strong.raster <- imager:::as.data.frame.cimg(strong) -->
-<!-- ggplot() + -->
-<!--   geom_raster(data = strong.raster, aes(x = x, y = -y, fill = value)) + -->
-<!--   scale_fill_manual(values = c("black", "white", "grey"))+ -->
-<!--   coord_fixed() + -->
-<!--   labs(title = "Strength-thresholded Bullet Land") + -->
-<!--   guides(fill = FALSE) -->
-
-<!-- ggsave(filename = "../man/figures/strong-threshold.png", width = 4, height= 3, units = "in", dpi = 175) -->
-
-<!-- ``` -->
-
-<!-- ```{r, echo = F} -->
-<!-- knitr::include_graphics("../man/figures/canny-land.png") -->
-<!-- knitr::include_graphics("../man/figures/strong-threshold.png") -->
-
-<!-- ``` -->
-
-
-<!-- Notice how in the Canny-Edge detection image, the Canny edge picks up a couple strong striae. We do not want the Hough transform to mistake these strong striae for viable borders of the groove engraved areas and so the strength thresholding pre-processing method was selected to minimize this risk and slightly improve processing time. -->
 
 ## Hough Transform Algorithm
-XXX Move the theoretical Hough explanation into this section XXX
 
-
-## Applying Hough Transform
-
-Using the image gradient calculated during the preprocessing step, we begin the Hough transform process using the `hough_lines` function from `imager`^[Other implementations of Hough transforms in R include XXXX]. XXX Please expand on this - what representation does `Cimg` use (e.g. where is the origin), and what representation do we need for compatibility with `bulletxtrctr` and `x3ptools`? Pictures may be useful... XXX Because we are working in images that start at the origin we need to shift the hough transform results XXX this next bit doesn't seem to be connected to the shift mentioned earlier in the sentence. Try to connect it better by elaborating a bit? XXX and return a dataframe for line selection processes. We then transform the $theta$ values to be between XXX between...? XXX
-
-```{r}
-# We want to get values with respect to (0,0) not (1,1)
- hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) 
-
-
-# Filter so that only vertical-ish lines are selected for communication
-hough.df <- hough.df %>%
-    dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2 * pi)) %>%
-    dplyr::filter(
-      theta > (-pi / 16), # identify only vertical(ish) lines
-      theta < (pi / 16)
-    )
-  hough.df <- unique(hough.df) # get rid of duplicates
-
-```
-
-XXX Move this to the Hough Transform theory section XXX
-
-Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of the gradient image we've created labeled "strong" XXX Let's keep this discussion general, instead of specific to our implementation/use of the algorithm XXX. For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughtly how many pixels in our image fall on the detected lines. 
+Before continuing on with the Hough transform process, a discussion of the parametrization and process is necessary to facilitate understanding. The actual Hough algorithm cycles through every pixel of an inputed image, typically one that has undergone some sort of edge-detection. For every possible non-zero edge point, an equivalent sinusoidal curve is generated in the feature space. Consequently points on a line will generate sinusoidal curves that all intersect at a particular set of parameters that best describe the line detected. So not only does the Hough transform suggest parameters for edges detected it also yields a "score" which counts the number of lines that intersect at each point in the feature space, or roughly how many pixels in our image fall on the detected lines. 
 
 A note about the feature space, since the slope of vertical lines in the x,y-plane is infinite the amount of memory required to store results in the feature space would make this algorithm unfeasible. So to manage with this problem, the Hough transform characterizes line in Hessian Normal form, meaning each line is described by a $\rho$ and a $\theta$ where $\rho$ is an orthogonal vector from the origin to a point on a detected line, and $\theta$ is the angle between the orthogonal vector and the postivie x-axis. 
 
@@ -265,12 +243,6 @@ These results are useful but in order to use the Hough transform we need to deci
 $$\rho = x_o\cos(\theta) + y_o\sin(\theta)$$
 
 Where $x_o$ is the x intercept and $y_o$ is the y-intercept. We can easily find the x-intercept of any Hough line by finding $\frac{\rho}{cos(\theta)}$. This is accomplished in a helper function called `rho_to_ab` which is not exported as part of the `groovFinder` package. We utilize this helper function to then find the points of each hough line where the Hough line intersects the top and bottom of each land. 
-
-```{r}
-
-segments <- grooveFinder:::rho_to_ab(df = hough.df)
-
-```
 
 
 ```{r, echo = FALSE, eval = FALSE}
@@ -342,7 +314,40 @@ knitr::include_graphics("../man/figures/calc-xbottom.png", dpi = 300)
 
 We then find the slope in y of each Hough line by dividing the difference in x between "xtop" and "xbottom" by the height of the bullet land. We utilize the slope in y rather than the slope in x because it is numerically more robust. 
 
+## Applying Hough Transform
+
+Using the image gradient calculated during the preprocessing step, we begin the Hough transform process using the `hough_lines` function from `imager`^[Other implementations of Hough transforms in R include the `PET` package]. As discussed previously we are working with images in the `Cimg` class, so the origin is in the top-left corner of the image. However, since the `Cimg` is created from the surface matrix of an x3p file, it is indexed from 1 to the associated number of rows or columns in the surface matrix. But we would ideally like our image to be based around the origin so a "shift" is introduced in the `hough_line` function that simply shifts the indices of values by one unit so that the image is based from the origin. 
+
 ```{r}
+# We want to get values with respect to (0,0) not (1,1)
+ hough.df <- hough_line(strong, data.frame = TRUE, shift = FALSE) 
+
+
+# Filter so that only vertical-ish lines are selected for communication
+hough.df <- hough.df %>%
+    dplyr::mutate(theta = ifelse(theta <= pi, theta, theta - 2 * pi)) %>%
+    dplyr::filter(
+      theta > (-pi / 16), # identify only vertical(ish) lines
+      theta < (pi / 16)
+    )
+  hough.df <- unique(hough.df) # get rid of duplicates
+
+```
+
+The output we receive from the Hough transform comes in the form of a dataframe, where each row is a non-unique line detected parameterized in Hessian Normal form.  Originally, $\theta$ is presented between 0 and $2\pi$ which is hard for `R` to filter based on logical constraints and makes it hard for interpretation. So we re-formulate the $\theta$ parameter to be between $-\pi$ to $\pi$. Then we choose to filter out lines that are not fairly vertical so those with slopes greater than $\frac{-\pi}{16}$ and less than $\frac{\pi}{16}$. 
+
+## Selecting the best Hough Line
+
+The Hough transform outputs a score that can be interpreted as the number of points detected along a particular line through the image. Theoretically the strongest line detected in the image should be the groove locations. However, score alone is not a good enough metric to choose groove locations: we need to first normalize the score of each Hough line by dividing the score by the largest possible number of points detected in the line. We take into consideration only lines that intersect both the top and bottom of the scan, and find that the largest possible score for each Hough estimate would be: $\text{Height of the bullet land}/cos(\theta)$. So we divide each observed Hough score by the maximum score possible for lines at that angle. To select each groove we first select only Hough estimates below the lower one-fourth of the bullet land and grooves above the upper three-fourths of the land. 
+
+```{r}
+
+segments <- grooveFinder:::rho_to_ab(df = hough.df)
+
+```
+
+```{r}
+
 segments <- segments %>%
     dplyr::mutate(
       xbottom = xintercept - height*tan(theta),
@@ -353,27 +358,20 @@ segments <- segments %>%
     dplyr::arrange(desc(norm.score))
 ```
 
-XXX End move to the Hough Theory section XXX
-
-XXX Add a specific explanation of Hough's application relative to the bullet land. Any parameterization differences (e.g. where the origin is relative to the image) should probably go in here. XXX
-
-## Selecting the best Hough Line
-
-The Hough transform outputs a score that can be interpreted as the number of points detected along a particular line through the image. Theoretically the strongest line detected in the image should be the groove locations. However, score alone is not a good enough metric to choose groove locations: we need to first normalize the score of each Hough line by dividing the score by the largest possible number of points detected in the line. We take into consideration only lines that intersect both the top and bottom of the scan, and find that the largest possible score for each Hough estimate would be: $\text{Height of the bullet land}/cos(\theta)$. So we divide each observed Hough score by the maximum score possible for lines at that angle. To select each groove we first select only Hough estimates below the lower one-sixth of the bullet land and grooves above the upper five-sixth of the land. XXX Are we still doing the normalization thing? I thought we decided it didn't matter once we filtered vertically XXX
 
 ```{r}
- # Find the middle 2/3rds
-  lthird <- width / 6
-  uthird <- 5 * width / 6
+ # Find the middle 1/2rds
+  lfourth <- width / 4
+  ufourth <- 3 * width / 4
 
   # separate into left and right sides and only take into account bullet lands that intersect with the image bottom
 
   segments.left <- segments %>%
-    filter(rho < lthird,
+    filter(rho < lfourth,
            xbottom > 0)
 
   segments.right <- segments %>%
-    filter(rho > uthird,
+    filter(rho > ufourth,
            xbottom < width)
   
   # select largest normalized score parametrization
