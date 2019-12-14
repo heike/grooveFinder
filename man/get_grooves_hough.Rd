@@ -4,8 +4,7 @@
 \alias{get_grooves_hough}
 \title{Use Hough transformation to identify groove locations.}
 \usage{
-get_grooves_hough(land, norm.index = 1, adjust = 10,
-  return_plot = FALSE)
+get_grooves_hough(land, norm.index = 1, adjust = 10, return_plot = FALSE)
 }
 \arguments{
 \item{land}{Either a dataframe of surface measurements in microns in the x, y, and x direction, or an x3p file. Use `x3p_to_df` to access the data from an x3p scan.}
