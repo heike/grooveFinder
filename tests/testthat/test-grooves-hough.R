@@ -104,21 +104,17 @@ test_that("get_grooves_hough works", {
   expect_lte(grooves3$right.groove.fit(6.25), 136.25)
   expect_gte(grooves3$right.groove.fit(6.25), 136.25 - 11)
 
+
   # test fit around bottom index
-  expect_lte(grooves2$left.groove.fit(0), 9.375 + 11)
-  expect_gte(grooves2$left.groove.fit(0), 9.375)
-
-  expect_gte(grooves2$right.groove.fit(0), 159.375 - 11)
-  expect_lte(grooves2$right.groove.fit(0), 159.375)
-
+  expect_lte(grooves2$left.groove.fit(0), 10.625 + 11)
+  expect_gte(grooves2$left.groove.fit(0), 10.625)
+  expect_gte(grooves$right.groove.fit(0), 160.625 - 11)
+  expect_lte(grooves$right.groove.fit(0), 160.625)
   # text fit around top index
-  expect_lte(grooves2$left.groove.fit(40), 15.625 + 11)
-  expect_gte(grooves2$left.groove.fit(40), 15.625)
-
-  expect_gte(grooves2$right.groove.fit(40), 165.625 - 11)
-  expect_lte(grooves2$right.groove.fit(40), 165.625)
-
-
+  expect_lte(grooves2$left.groove.fit(40), 16.875 + 11)
+  expect_gte(grooves2$left.groove.fit(40), 16.875)
+  expect_gte(grooves$right.groove.fit(40), 166.875 - 11)
+  expect_lte(grooves$right.groove.fit(40), 166.875)
   expect_equivalent(names(grooves2), exnames)
   # Test that both x3p and dfs work in function
   expect_silent(grooves <- get_grooves_hough(tmp_df))
